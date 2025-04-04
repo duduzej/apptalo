@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Dashboard Operacional</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('operacional_novo_pedido') }}" class="btn btn-primary me-2">
+                <i class="fas fa-plus"></i> Novo Pedido
+            </a>
+        </div>
+    </div>
+
+    <!-- Cards de Resumo -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">Em Aberto</h5>
+                    <h2 class="card-text">{{ pedidos_em_aberto }}</h2>
+                    <small>Aguardando processamento</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Em Produção</h5>
+                    <h2 class="card-text">{{ pedidos_em_producao }}</h2>
+                    <small>Em andamento</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Entregues</h5>
+                    <h2 class="card-text">{{ pedidos_entregues }}</h2>
+                    <small>Concluídos</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Atrasados</h5>
+                    <h2 class="card-text">{{ pedidos_atrasados }}</h2>
+                    <small>Fora do prazo</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Pedidos -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Meus Pedidos</h5>
+            <div class="table-responsive">
+                <table class="table table-striped" id="tabelaPedidos">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Cliente</th>
+                            <th>Data do Pedido</th>
+                            <th>Previsão de Entrega</th>
+                            <th>Status</th>
+                            <th>Valor Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos %}
+                        <tr>
+                            <td>{{ pedido.numero }}</td>
+                            <td>{{ pedido.cliente.nome }}</td>
+                            <td>{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if pedido.data_previsao_entrega %}
+                                    {{ pedido.data_previsao_entrega.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    Não definida
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ pedido.status|lower|replace(' ', '-') }}">
+                                    {{ pedido.status }}
+                                </span>
+                            </td>
+                            <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('operacional_visualizar_pedido', id=pedido.id) }}" 
+                                       class="btn btn-sm btn-info" title="Visualizar">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('operacional_editar_pedido', id=pedido.id) }}" 
+                                       class="btn btn-sm btn-primary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('operacional_exportar_pdf', id=pedido.id) }}" 
+                                       class="btn btn-sm btn-danger" title="Gerar PDF" target="_blank">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-danger" title="Excluir"
+                                            onclick="confirmarExclusao({{ pedido.id }}, '{{ pedido.numero }}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="modalConfirmacao" tabindex="-1" aria-labelledby="modalConfirmacaoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConfirmacaoLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                Tem certeza que deseja excluir o pedido <span id="numeroPedido"></span>?
+                <br>
+                <strong class="text-danger">Esta ação não pode ser desfeita!</strong>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formExcluir" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#tabelaPedidos').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json'
+        },
+        order: [[2, 'desc']], // Ordenar por data do pedido (decrescente)
+        pageLength: 10
+    });
+});
+
+function confirmarExclusao(id, numero) {
+    document.getElementById('numeroPedido').textContent = numero;
+    document.getElementById('formExcluir').action = `/operacional/pedidos/${id}/excluir`;
+    new bootstrap.Modal(document.getElementById('modalConfirmacao')).show();
+}
+</script>
+{% endblock %}
+
+{% endblock %} 

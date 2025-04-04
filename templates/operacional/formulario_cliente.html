@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{% if cliente %}Editar Cliente{% else %}Novo Cliente{% endif %}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('operacional_clientes') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">Nome *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required 
+                                   value="{{ cliente.nome if cliente else '' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   value="{{ cliente.email if cliente else '' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="telefone" class="form-label">Telefone</label>
+                            <input type="tel" class="form-control" id="telefone" name="telefone"
+                                   value="{{ cliente.telefone if cliente else '' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="endereco" class="form-label">Endereço</label>
+                            <textarea class="form-control" id="endereco" name="endereco" rows="3">{{ cliente.endereco if cliente else '' }}</textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

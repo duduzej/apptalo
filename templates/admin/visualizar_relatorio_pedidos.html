@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Prévia do Relatório de Pedidos</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('admin_relatorios') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{{ url_for('admin_relatorio_pedidos', data_inicio=data_inicio, data_fim=data_fim, status=status) }}" 
+               class="btn btn-danger" target="_blank">
+                <i class="fas fa-file-pdf"></i> Gerar PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros Aplicados -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Filtros Aplicados</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Período:</strong> {{ data_inicio_formatada }} até {{ data_fim_formatada }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Status:</strong> {{ status if status else 'Todos' }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Total de Pedidos:</strong> {{ pedidos|length }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total de Pedidos</h6>
+                    <h2 class="display-6">{{ pedidos|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Valor Total</h6>
+                    <h2 class="display-6">R$ {{ "%.2f"|format(valor_total) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Média por Pedido</h6>
+                    <h2 class="display-6">R$ {{ "%.2f"|format(valor_medio) }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title">Pedidos Atrasados</h6>
+                    <h2 class="display-6">{{ pedidos_atrasados }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Pedidos -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Lista de Pedidos</h5>
+            <div class="table-responsive">
+                <table class="table table-striped" id="tabelaPedidos">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Cliente</th>
+                            <th>Data do Pedido</th>
+                            <th>Previsão</th>
+                            <th>Status</th>
+                            <th>Valor Total</th>
+                            <th>Operador</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos %}
+                        <tr>
+                            <td>{{ pedido.numero }}</td>
+                            <td>{{ pedido.cliente.nome }}</td>
+                            <td>{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if pedido.data_previsao_entrega %}
+                                    {{ pedido.data_previsao_entrega.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ pedido.status|lower|replace(' ', '-') }}">
+                                    {{ pedido.status }}
+                                </span>
+                            </td>
+                            <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
+                            <td>{{ pedido.usuario.nome }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#tabelaPedidos').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json'
+        },
+        order: [[2, 'desc']], // Ordenar por data do pedido (decrescente)
+        pageLength: 25
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %} 

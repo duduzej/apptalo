@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Relatório de Clientes</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <button onclick="window.print()" class="btn btn-primary me-2">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+            <a href="{{ url_for('exportar_relatorio_clientes_pdf') }}" class="btn btn-danger">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ request.args.get('data_inicio', '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ request.args.get('data_fim', '') }}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabela de Clientes -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="tabelaClientes">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Telefone</th>
+                            <th>Endereço</th>
+                            <th>Total de Pedidos</th>
+                            <th>Valor Total</th>
+                            <th>Último Pedido</th>
+                            <th>Status Predominante</th>
+                            <th>Ticket Médio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in clientes %}
+                        <tr>
+                            <td>{{ cliente.nome }}</td>
+                            <td>{{ cliente.telefone }}</td>
+                            <td>{{ cliente.endereco }}</td>
+                            <td>{{ cliente.total_pedidos }}</td>
+                            <td>R$ {{ "%.2f"|format(cliente.valor_total) }}</td>
+                            <td>{{ cliente.ultimo_pedido.strftime('%d/%m/%Y') if cliente.ultimo_pedido else 'N/A' }}</td>
+                            <td>
+                                {% if cliente.status_predominante %}
+                                <span class="badge bg-{{ cliente.status_predominante|lower|replace(' ', '-') }}">
+                                    {{ cliente.status_predominante }}
+                                </span>
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </td>
+                            <td>R$ {{ "%.2f"|format(cliente.ticket_medio) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-dark">
+                            <td colspan="3"><strong>Total Geral</strong></td>
+                            <td><strong>{{ total_pedidos }}</strong></td>
+                            <td><strong>R$ {{ "%.2f"|format(total_valor) }}</strong></td>
+                            <td colspan="2"></td>
+                            <td><strong>R$ {{ "%.2f"|format(ticket_medio_geral) }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#tabelaClientes').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/pt-BR.json'
+        },
+        order: [[3, 'desc']], // Ordenar por total de pedidos (decrescente)
+        pageLength: 25
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %} 

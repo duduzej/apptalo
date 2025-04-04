@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Visualizar Pedido</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('operacional_pedidos') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{{ url_for('operacional_editar_pedido', id=pedido.id) }}" class="btn btn-primary me-2">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <div class="dropdown me-2">
+                <button class="btn btn-info dropdown-toggle" type="button" id="statusDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-tasks"></i> Status: {{ pedido.status }}
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="statusDropdown">
+                    <li><a class="dropdown-item {% if pedido.status == 'Em Aberto' %}active{% endif %}" 
+                          href="#" onclick="alterarStatus('Em Aberto')">Em Aberto</a></li>
+                    <li><a class="dropdown-item {% if pedido.status == 'Em Produção' %}active{% endif %}" 
+                          href="#" onclick="alterarStatus('Em Produção')">Em Produção</a></li>
+                    <li><a class="dropdown-item {% if pedido.status == 'Entregue' %}active{% endif %}" 
+                          href="#" onclick="alterarStatus('Entregue')">Entregue</a></li>
+                    <li><a class="dropdown-item {% if pedido.status == 'Cancelado' %}active{% endif %}" 
+                          href="#" onclick="alterarStatus('Cancelado')">Cancelado</a></li>
+                </ul>
+            </div>
+            <a href="{{ url_for('operacional_exportar_pdf', id=pedido.id) }}" class="btn btn-danger" target="_blank">
+                <i class="fas fa-file-pdf"></i> Gerar PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Informações do Pedido</h5>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Número do Pedido:</dt>
+                                <dd class="col-sm-8">{{ pedido.numero }}</dd>
+
+                                <dt class="col-sm-4">Cliente:</dt>
+                                <dd class="col-sm-8">{{ pedido.cliente.nome }}</dd>
+
+                                <dt class="col-sm-4">Data do Pedido:</dt>
+                                <dd class="col-sm-8">{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    {% set status_class = {
+                                        'Em Aberto': 'bg-em-aberto',
+                                        'Em Produção': 'bg-em-producao',
+                                        'Entregue': 'bg-entregue',
+                                        'Cancelado': 'bg-cancelado'
+                                    } %}
+                                    <span class="badge {{ status_class[pedido.status] }}">
+                                        {{ pedido.status }}
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Criado por:</dt>
+                                <dd class="col-sm-8">{{ pedido.usuario.nome }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    {% if pedido.observacoes %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Observações:</h6>
+                            <p>{{ pedido.observacoes }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Itens do Pedido</h5>
+                    <hr>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Descrição</th>
+                                    <th class="text-center">Quantidade</th>
+                                    <th>Previsão de Entrega</th>
+                                    <th class="text-end">Valor Unitário</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set total_pedido = 0 %}
+                                {% for item in pedido.itens %}
+                                {% set valor_total_item = item.quantidade * item.valor_unitario %}
+                                {% set total_pedido = total_pedido + valor_total_item %}
+                                <tr>
+                                    <td>{{ item.item }}</td>
+                                    <td>{{ item.descricao }}</td>
+                                    <td class="text-center">{{ item.quantidade }}</td>
+                                    <td>
+                                        {% if item.data_previsao_entrega %}
+                                            {{ item.data_previsao_entrega.strftime('%d/%m/%Y') }}
+                                        {% else %}
+                                            Não definida
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">R$ {{ "%.2f"|format(item.valor_unitario) }}</td>
+                                    <td class="text-end">R$ {{ "%.2f"|format(valor_total_item) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong>Total do Pedido:</strong></td>
+                                    <td class="text-end"><strong>R$ {{ "%.2f"|format(total_pedido) }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-em-aberto {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+.bg-em-producao {
+    background-color: #17a2b8 !important;
+    color: #fff !important;
+}
+.bg-entregue {
+    background-color: #28a745 !important;
+    color: #fff !important;
+}
+.bg-cancelado {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+}
+</style>
+
+<script>
+function alterarStatus(novoStatus) {
+    if (confirm('Deseja realmente alterar o status do pedido para ' + novoStatus + '?')) {
+        fetch('/operacional/pedidos/{{ pedido.id }}/status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                status: novoStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Erro ao alterar status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao alterar status do pedido');
+        });
+    }
+}
+</script>
+{% endblock %} 

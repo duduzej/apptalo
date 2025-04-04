@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Pedidos</h1>
+        <a href="{{ url_for('operacional_novo_pedido') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Novo Pedido
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Cliente</th>
+                            <th>Data</th>
+                            <th>Previsão de Entrega</th>
+                            <th>Valor Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos %}
+                        <tr>
+                            <td>{{ pedido.numero }}</td>
+                            <td>{{ pedido.cliente.nome }}</td>
+                            <td>{{ pedido.data.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ pedido.data_previsao_entrega.strftime('%d/%m/%Y') if pedido.data_previsao_entrega else '-' }}</td>
+                            <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('operacional_visualizar_pedido', id=pedido.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('operacional_editar_pedido', id=pedido.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('operacional_exportar_pdf', id=pedido.id) }}" class="btn btn-sm btn-secondary">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

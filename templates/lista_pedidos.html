@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Meus Pedidos</h1>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Descrição</th>
+                <th>Data</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pedido in pedidos %}
+            <tr>
+                <td>{{ pedido.nome_cliente }}</td>
+                <td>{{ pedido.descricao }}</td>
+                <td>{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</td>
+                <td>
+                    <a href="{{ url_for('editar_pedido', id=pedido.id) }}" class="btn btn-sm btn-primary btn-action">Editar</a>
+                    <a href="{{ url_for('visualizar_pedido', id=pedido.id) }}" class="btn btn-sm btn-info btn-action">Visualizar</a>
+                    <a href="{{ url_for('exportar_pdf', id=pedido.id) }}" class="btn btn-sm btn-success btn-action">PDF</a>
+                    <a href="{{ url_for('excluir_pedido', id=pedido.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja excluir este pedido?')">Excluir</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center">Nenhum pedido cadastrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %} 

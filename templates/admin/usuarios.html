@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Gerenciar Usuários</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('admin_novo_usuario') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Usuário
+            </a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Email</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for usuario in usuarios %}
+                        <tr>
+                            <td>{{ usuario.nome }}</td>
+                            <td>{{ usuario.email }}</td>
+                            <td>{{ usuario.tipo|title }}</td>
+                            <td>
+                                <span class="badge {% if usuario.ativo %}badge-success{% else %}badge-danger{% endif %}">
+                                    {{ 'Ativo' if usuario.ativo else 'Inativo' }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin_editar_usuario', id=usuario.id) }}" 
+                                       class="btn btn-sm btn-primary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button onclick="toggleUsuario({{ usuario.id }})" 
+                                            class="btn btn-sm {% if usuario.ativo %}btn-danger{% else %}btn-success{% endif %}" 
+                                            title="{{ 'Desativar' if usuario.ativo else 'Ativar' }}">
+                                        <i class="fas {% if usuario.ativo %}fa-user-times{% else %}fa-user-check{% endif %}"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleUsuario(id) {
+    if (confirm('Deseja realmente alterar o status deste usuário?')) {
+        fetch(`/admin/usuarios/${id}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Erro ao alterar status do usuário');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao alterar status do usuário');
+        });
+    }
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="text-center">Visualização do Pedido</h2>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h4>Informações do Pedido:</h4>
+                    <p><strong>Número do Pedido:</strong> {{ pedido.id }}</p>
+                    <p><strong>Cliente:</strong> {{ pedido.nome_cliente }}</p>
+                    <p><strong>Data do Pedido:</strong> {{ pedido.data_pedido.strftime('%d/%m/%Y') }}</p>
+                    {% if pedido.data_previsao_entrega %}
+                    <p><strong>Previsão de Entrega:</strong> {{ pedido.data_previsao_entrega.strftime('%d/%m/%Y') }}</p>
+                    {% endif %}
+                    <p><strong>Criado por:</strong> {{ pedido.usuario.nome }}</p>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h4>Itens do Pedido:</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Descrição</th>
+                                    <th class="text-center">Quantidade</th>
+                                    <th class="text-end">Valor Unitário</th>
+                                    <th class="text-end">Valor Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in pedido.itens %}
+                                <tr>
+                                    <td>{{ item.item }}</td>
+                                    <td>{{ item.descricao }}</td>
+                                    <td class="text-center">{{ item.quantidade }}</td>
+                                    <td class="text-end">R$ {{ "%.2f"|format(item.valor_unitario) }}</td>
+                                    <td class="text-end">R$ {{ "%.2f"|format(item.valor_total) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>Total do Pedido:</strong></td>
+                                    <td class="text-end"><strong>R$ {{ "%.2f"|format(pedido.valor_total) }}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <p class="text-muted small">Data de Visualização: {{ datetime.now().strftime('%d/%m/%Y %H:%M:%S') }}</p>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12">
+                    <a href="{{ url_for('exportar_pdf', id=pedido.id) }}" class="btn btn-success">Gerar PDF</a>
+                    <a href="{{ url_for('lista_pedidos') }}" class="btn btn-secondary">Voltar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{% if pedido %}Editar Pedido{% else %}Novo Pedido{% endif %}</h1>
+
+<form method="POST" class="mt-4">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="nome_cliente" class="form-label">Nome do Cliente</label>
+            <input type="text" class="form-control" id="nome_cliente" name="nome_cliente" value="{{ pedido.nome_cliente if pedido else '' }}" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="data_previsao_entrega" class="form-label">Previsão de Entrega</label>
+            <input type="date" class="form-control" id="data_previsao_entrega" name="data_previsao_entrega" value="{{ pedido.data_previsao_entrega.strftime('%Y-%m-%d') if pedido and pedido.data_previsao_entrega else '' }}">
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">Itens do Pedido</h5>
+        </div>
+        <div class="card-body">
+            <div id="itens-container">
+                {% if pedido and pedido.itens %}
+                    {% for item in pedido.itens %}
+                        <div class="row item-row mb-3">
+                            <div class="col-md-2">
+                                <label class="form-label">Item</label>
+                                <input type="text" class="form-control" name="item[]" value="{{ item.item }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Descrição</label>
+                                <input type="text" class="form-control" name="descricao[]" value="{{ item.descricao }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Quantidade</label>
+                                <input type="number" class="form-control quantidade" name="quantidade[]" value="{{ item.quantidade }}" min="1" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Valor Unitário</label>
+                                <input type="text" class="form-control valor-unitario" name="valor_unitario[]" value="{{ '%.2f'|format(item.valor_unitario) }}" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Valor Total</label>
+                                <input type="text" class="form-control valor-total" value="{{ '%.2f'|format(item.valor_total) }}" readonly>
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-danger form-control remover-item">X</button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="row item-row mb-3">
+                        <div class="col-md-2">
+                            <label class="form-label">Item</label>
+                            <input type="text" class="form-control" name="item[]" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Descrição</label>
+                            <input type="text" class="form-control" name="descricao[]">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Quantidade</label>
+                            <input type="number" class="form-control quantidade" name="quantidade[]" min="1" value="1" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Valor Unitário</label>
+                            <input type="text" class="form-control valor-unitario" name="valor_unitario[]" value="0.00" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Valor Total</label>
+                            <input type="text" class="form-control valor-total" value="0.00" readonly>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="button" class="btn btn-danger form-control remover-item">X</button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button type="button" class="btn btn-success" id="adicionar-item">Adicionar Item</button>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6 offset-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Total do Pedido</h5>
+                            <h3 class="text-end" id="total-pedido">R$ 0,00</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mb-3">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{{ url_for('lista_pedidos') }}" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('itens-container');
+    const btnAdicionar = document.getElementById('adicionar-item');
+    const totalPedido = document.getElementById('total-pedido');
+
+    function atualizarValorTotal(row) {
+        const quantidade = parseFloat(row.querySelector('.quantidade').value) || 0;
+        const valorUnitario = parseFloat(row.querySelector('.valor-unitario').value.replace(',', '.')) || 0;
+        const valorTotal = quantidade * valorUnitario;
+        row.querySelector('.valor-total').value = valorTotal.toFixed(2);
+        atualizarTotalPedido();
+    }
+
+    function atualizarTotalPedido() {
+        let total = 0;
+        document.querySelectorAll('.valor-total').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        totalPedido.textContent = `R$ ${total.toFixed(2)}`;
+    }
+
+    function criarNovoItem() {
+        const template = `
+            <div class="row item-row mb-3">
+                <div class="col-md-2">
+                    <label class="form-label">Item</label>
+                    <input type="text" class="form-control" name="item[]" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" class="form-control" name="descricao[]">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Quantidade</label>
+                    <input type="number" class="form-control quantidade" name="quantidade[]" min="1" value="1" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Valor Unitário</label>
+                    <input type="text" class="form-control valor-unitario" name="valor_unitario[]" value="0.00" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Valor Total</label>
+                    <input type="text" class="form-control valor-total" value="0.00" readonly>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="button" class="btn btn-danger form-control remover-item">X</button>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', template);
+        const novaLinha = container.lastElementChild;
+        configurarEventosLinha(novaLinha);
+    }
+
+    function configurarEventosLinha(row) {
+        const btnRemover = row.querySelector('.remover-item');
+        const quantidade = row.querySelector('.quantidade');
+        const valorUnitario = row.querySelector('.valor-unitario');
+
+        btnRemover.addEventListener('click', function() {
+            if (container.children.length > 1) {
+                row.remove();
+                atualizarTotalPedido();
+            } else {
+                alert('O pedido deve ter pelo menos um item!');
+            }
+        });
+
+        [quantidade, valorUnitario].forEach(input => {
+            input.addEventListener('input', () => atualizarValorTotal(row));
+        });
+
+        valorUnitario.addEventListener('blur', function() {
+            let valor = parseFloat(this.value.replace(',', '.')) || 0;
+            this.value = valor.toFixed(2);
+        });
+    }
+
+    // Configurar eventos iniciais
+    btnAdicionar.addEventListener('click', criarNovoItem);
+    document.querySelectorAll('.item-row').forEach(configurarEventosLinha);
+    atualizarTotalPedido();
+});
+</script>
+{% endblock %} 

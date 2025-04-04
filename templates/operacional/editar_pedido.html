@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Editar Pedido</h1>
+        <a href="{{ url_for('operacional_pedidos') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cliente_id" class="form-label">Cliente</label>
+                        <select class="form-control" id="cliente_id" name="cliente_id" required>
+                            <option value="">Selecione um cliente</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}" {% if cliente.id == pedido.cliente_id %}selected{% endif %}>{{ cliente.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="data_previsao_entrega" class="form-label">Previsão de Entrega</label>
+                        <input type="date" class="form-control" id="data_previsao_entrega" name="data_previsao_entrega" value="{{ pedido.data_previsao_entrega.strftime('%Y-%m-%d') if pedido.data_previsao_entrega else '' }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ pedido.observacoes }}</textarea>
+                    </div>
+                </div>
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Itens do Pedido</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="itens">
+                            {% for item in pedido.itens %}
+                            <div class="row item mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Nome do Item</label>
+                                    <input type="text" class="form-control" name="itens[]" value="{{ item.nome }}" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Descrição</label>
+                                    <input type="text" class="form-control" name="itens[]" value="{{ item.descricao }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Quantidade</label>
+                                    <input type="number" class="form-control quantidade" name="itens[]" value="{{ item.quantidade }}" min="1" step="0.01" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Preço Unitário</label>
+                                    <input type="number" class="form-control preco" name="itens[]" value="{{ item.preco_unitario }}" min="0" step="0.01" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Total</label>
+                                    <input type="number" class="form-control total" name="itens[]" value="{{ item.total }}" readonly>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="text-right">
+                            <button type="button" class="btn btn-primary" onclick="adicionarItem()">
+                                <i class="fas fa-plus"></i> Adicionar Item
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+function adicionarItem() {
+    var item = document.querySelector('.item').cloneNode(true);
+    var inputs = item.querySelectorAll('input');
+    inputs.forEach(function(input) {
+        input.value = '';
+    });
+    document.getElementById('itens').appendChild(item);
+}
+
+document.querySelectorAll('.item').forEach(function(item) {
+    var quantidade = item.querySelector('.quantidade');
+    var preco = item.querySelector('.preco');
+    var total = item.querySelector('.total');
+    
+    function calcularTotal() {
+        var qtd = parseFloat(quantidade.value) || 0;
+        var prc = parseFloat(preco.value) || 0;
+        total.value = (qtd * prc).toFixed(2);
+    }
+    
+    quantidade.addEventListener('input', calcularTotal);
+    preco.addEventListener('input', calcularTotal);
+});
+</script>
+{% endblock %}
+{% endblock %} 

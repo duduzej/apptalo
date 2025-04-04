@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{% if pedido %}Editar Pedido{% else %}Novo Pedido{% endif %}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('operacional_pedidos') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" id="formPedido">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cliente_id" class="form-label">Cliente *</label>
+                                <select class="form-control" id="cliente_id" name="cliente_id" required>
+                                    <option value="">Selecione um cliente</option>
+                                    {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}" {% if pedido and pedido.cliente_id == cliente.id %}selected{% endif %}>
+                                        {{ cliente.nome }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="data_previsao_entrega" class="form-label">Previsão de Entrega</label>
+                                <input type="date" class="form-control" id="data_previsao_entrega" name="data_previsao_entrega"
+                                       value="{{ pedido.data_previsao_entrega.strftime('%Y-%m-%d') if pedido and pedido.data_previsao_entrega else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observacoes" class="form-label">Observações</label>
+                            <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ pedido.observacoes if pedido else '' }}</textarea>
+                        </div>
+
+                        <hr>
+                        <h4>Itens do Pedido</h4>
+                        
+                        <div id="itens-container">
+                            {% if pedido and pedido.itens %}
+                                {% for item in pedido.itens %}
+                                <div class="row item-row mb-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Item</label>
+                                        <input type="text" class="form-control" name="item[]" value="{{ item.item }}" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Descrição</label>
+                                        <input type="text" class="form-control" name="descricao[]" value="{{ item.descricao }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Quantidade</label>
+                                        <input type="number" class="form-control quantidade" name="quantidade[]" value="{{ item.quantidade }}" min="1" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Valor Unitário</label>
+                                        <input type="number" class="form-control valor-unitario" name="valor_unitario[]" value="{{ item.valor_unitario }}" step="0.01" min="0" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Previsão</label>
+                                        <input type="date" class="form-control" name="data_previsao_entrega[]" value="{{ item.data_previsao_entrega.strftime('%Y-%m-%d') if item.data_previsao_entrega else '' }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Total</label>
+                                        <input type="text" class="form-control valor-total" value="{{ item.valor_total }}" readonly>
+                                        <button type="button" class="btn btn-danger btn-sm mt-2 remover-item">
+                                            <i class="fas fa-trash"></i> Remover
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="row item-row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Item</label>
+                                    <input type="text" class="form-control" name="item[]" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Descrição</label>
+                                    <input type="text" class="form-control" name="descricao[]">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Quantidade</label>
+                                    <input type="number" class="form-control quantidade" name="quantidade[]" min="1" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Valor Unitário</label>
+                                    <input type="number" class="form-control valor-unitario" name="valor_unitario[]" step="0.01" min="0" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Previsão</label>
+                                    <input type="date" class="form-control" name="data_previsao_entrega[]">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Total</label>
+                                    <input type="text" class="form-control valor-total" readonly>
+                                    <button type="button" class="btn btn-danger btn-sm mt-2 remover-item">
+                                        <i class="fas fa-trash"></i> Remover
+                                    </button>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <button type="button" class="btn btn-success" id="adicionar-item">
+                                    <i class="fas fa-plus"></i> Adicionar Item
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6 offset-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Total do Pedido</h5>
+                                        <h3 class="text-end" id="total-pedido">R$ 0,00</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Pedido
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Formata campos de data
+    $('input[type="date"]').each(function() {
+        if (!$(this).val()) {
+            $(this).val(new Date().toISOString().split('T')[0]);
+        }
+    });
+
+    // Template para novo item
+    function getNovoItemHtml() {
+        return `
+            <div class="row item-row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Item</label>
+                    <input type="text" class="form-control" name="item[]" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Descrição</label>
+                    <input type="text" class="form-control" name="descricao[]">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Quantidade</label>
+                    <input type="number" class="form-control quantidade" name="quantidade[]" min="1" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Valor Unitário</label>
+                    <input type="number" class="form-control valor-unitario" name="valor_unitario[]" step="0.01" min="0" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Previsão</label>
+                    <input type="date" class="form-control" name="data_previsao_entrega[]">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Total</label>
+                    <input type="text" class="form-control valor-total" readonly>
+                    <button type="button" class="btn btn-danger btn-sm mt-2 remover-item">
+                        <i class="fas fa-trash"></i> Remover
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // Adicionar item
+    $('#adicionar-item').click(function() {
+        $('#itens-container').append(getNovoItemHtml());
+    });
+
+    // Remover item
+    $(document).on('click', '.remover-item', function() {
+        if ($('.item-row').length > 1) {
+            $(this).closest('.item-row').remove();
+            calcularTotal();
+        } else {
+            alert('O pedido deve ter pelo menos um item!');
+        }
+    });
+
+    // Calcular total do item
+    function calcularTotalItem(row) {
+        var quantidade = parseFloat(row.find('.quantidade').val()) || 0;
+        var valorUnitario = parseFloat(row.find('.valor-unitario').val()) || 0;
+        var total = quantidade * valorUnitario;
+        row.find('.valor-total').val(total.toFixed(2));
+        return total;
+    }
+
+    // Calcular total do pedido
+    function calcularTotal() {
+        var total = 0;
+        $('.item-row').each(function() {
+            total += calcularTotalItem($(this));
+        });
+        $('#total-pedido').text('R$ ' + total.toFixed(2));
+    }
+
+    // Eventos para recalcular totais
+    $(document).on('input', '.quantidade, .valor-unitario', function() {
+        calcularTotal();
+    });
+
+    // Calcular totais iniciais
+    calcularTotal();
+});
+</script>
+{% endblock %} 

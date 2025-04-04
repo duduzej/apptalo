@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Dashboard Administrativo</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="filtrarPeriodo('dia')">Hoje</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="filtrarPeriodo('semana')">Semana</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="filtrarPeriodo('mes')">Mês</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Total de Pedidos</h6>
+                            <h2 class="display-4">{{ total_pedidos }}</h2>
+                        </div>
+                        <i class="fas fa-shopping-cart fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Em Aberto</h6>
+                            <h2 class="display-4">{{ pedidos_em_aberto }}</h2>
+                        </div>
+                        <i class="fas fa-clock fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Em Produção</h6>
+                            <h2 class="display-4">{{ pedidos_em_producao }}</h2>
+                        </div>
+                        <i class="fas fa-cogs fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title">Entregues</h6>
+                            <h2 class="display-4">{{ pedidos_entregues }}</h2>
+                        </div>
+                        <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Tendência de Pedidos</h5>
+                    <canvas id="graficoTendencia"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Distribuição por Status</h5>
+                    <canvas id="graficoPizza"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pedidos Recentes e Alertas -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Pedidos Recentes</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Cliente</th>
+                                    <th>Data</th>
+                                    <th>Status</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pedido in pedidos_recentes %}
+                                <tr>
+                                    <td>{{ pedido.numero }}</td>
+                                    <td>{{ pedido.cliente.nome }}</td>
+                                    <td>{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ pedido.status|lower|replace(' ', '-') }}">
+                                            {{ pedido.status }}
+                                        </span>
+                                    </td>
+                                    <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Alertas</h5>
+                    <div class="list-group">
+                        {% if pedidos_atrasados %}
+                            {% for pedido in pedidos_atrasados %}
+                            <div class="list-group-item list-group-item-danger">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Pedido Atrasado: {{ pedido.numero }}</h6>
+                                    <small>{{ pedido.data_previsao_entrega.strftime('%d/%m/%Y') }}</small>
+                                </div>
+                                <p class="mb-1">Cliente: {{ pedido.cliente.nome }}</p>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="list-group-item list-group-item-success">
+                                <p class="mb-0">Não há pedidos atrasados! 🎉</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de Tendência
+const ctxTendencia = document.getElementById('graficoTendencia').getContext('2d');
+new Chart(ctxTendencia, {
+    type: 'line',
+    data: {
+        labels: {{ datas_pedidos|tojson }},
+        datasets: [{
+            label: 'Pedidos por Dia',
+            data: {{ contagem_pedidos|tojson }},
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de Pizza
+const ctxPizza = document.getElementById('graficoPizza').getContext('2d');
+new Chart(ctxPizza, {
+    type: 'doughnut',
+    data: {
+        labels: ['Em Aberto', 'Em Produção', 'Entregues', 'Cancelados'],
+        datasets: [{
+            data: [
+                {{ pedidos_em_aberto }},
+                {{ pedidos_em_producao }},
+                {{ pedidos_entregues }},
+                {{ pedidos_cancelados }}
+            ],
+            backgroundColor: [
+                '#ffc107',  // warning
+                '#17a2b8',  // info
+                '#28a745',  // success
+                '#dc3545'   // danger
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+function filtrarPeriodo(periodo) {
+    window.location.href = `{{ url_for('admin_dashboard') }}?periodo=${periodo}`;
+}
+</script>
+{% endblock %}
+
+{% endblock %} 

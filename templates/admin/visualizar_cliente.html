@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Detalhes do Cliente</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('admin_clientes') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{{ url_for('admin_editar_cliente', id=cliente.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Informações do Cliente</h5>
+                    <hr>
+                    <dl class="row">
+                        <dt class="col-sm-3">Nome:</dt>
+                        <dd class="col-sm-9">{{ cliente.nome }}</dd>
+
+                        <dt class="col-sm-3">Email:</dt>
+                        <dd class="col-sm-9">{{ cliente.email or 'Não informado' }}</dd>
+
+                        <dt class="col-sm-3">Telefone:</dt>
+                        <dd class="col-sm-9">{{ cliente.telefone or 'Não informado' }}</dd>
+
+                        <dt class="col-sm-3">Endereço:</dt>
+                        <dd class="col-sm-9">{{ cliente.endereco or 'Não informado' }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Pedidos do Cliente</h5>
+                    <hr>
+                    {% if cliente.pedidos %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Data</th>
+                                    <th>Status</th>
+                                    <th>Valor Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pedido in cliente.pedidos %}
+                                <tr>
+                                    <td>{{ pedido.numero }}</td>
+                                    <td>{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ pedido.status|lower|replace(' ', '-') }}">
+                                            {{ pedido.status }}
+                                        </span>
+                                    </td>
+                                    <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Este cliente ainda não possui pedidos.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

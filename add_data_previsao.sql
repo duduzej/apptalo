@@ -1,0 +1,1 @@
+ALTER TABLE item_pedido ADD COLUMN data_previsao_entrega DATETIME; 

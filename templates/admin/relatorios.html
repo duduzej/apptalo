@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Relatórios</h1>
+    </div>
+
+    <div class="row">
+        <!-- Relatório de Clientes -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Relatório de Clientes</h5>
+                    <p class="card-text">Análise detalhada dos clientes, incluindo total de pedidos, valores, status predominante e ticket médio.</p>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('admin_relatorio_clientes') }}" class="btn btn-primary">
+                            <i class="fas fa-users"></i> Visualizar
+                        </a>
+                        <a href="{{ url_for('exportar_relatorio_clientes_pdf') }}" class="btn btn-danger">
+                            <i class="fas fa-file-pdf"></i> Exportar PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Relatório de Pedidos -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Relatório de Pedidos</h5>
+                    <p class="card-text">Visão geral dos pedidos, status, valores e prazos de entrega.</p>
+                    <form id="formRelatorioPedidos" method="GET" action="{{ url_for('admin_visualizar_relatorio_pedidos') }}">
+                        <div class="mb-3">
+                            <label for="data_inicio" class="form-label">Data Inicial</label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="data_fim" class="form-label">Data Final</label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Todos</option>
+                                <option value="Em Aberto">Em Aberto</option>
+                                <option value="Em Produção">Em Produção</option>
+                                <option value="Entregue">Entregue</option>
+                                <option value="Cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Visualizar
+                            </button>
+                            <button type="submit" class="btn btn-danger" formaction="{{ url_for('admin_relatorio_pedidos') }}">
+                                <i class="fas fa-file-pdf"></i> Exportar PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

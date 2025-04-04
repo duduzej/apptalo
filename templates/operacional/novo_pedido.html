@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Novo Pedido</h1>
+        <a href="{{ url_for('operacional_dashboard') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form method="POST">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="cliente_id" class="form-label">Cliente</label>
+                        <select class="form-control" id="cliente_id" name="cliente_id" required>
+                            <option value="">Selecione um cliente</option>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="data_previsao_entrega" class="form-label">Previsão de Entrega</label>
+                        <input type="date" class="form-control" id="data_previsao_entrega" name="data_previsao_entrega">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Itens do Pedido</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="itens-container">
+                            <div class="item-row mb-3">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control" name="itens[]" placeholder="Nome do Item" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control" name="itens[]" placeholder="Descrição">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" class="form-control quantidade" name="itens[]" placeholder="Quantidade" step="0.01" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" class="form-control preco" name="itens[]" placeholder="Preço Unitário" step="0.01" required>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <input type="text" class="form-control total" name="itens[]" placeholder="Total" readonly>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-danger btn-block remover-item">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-success mt-3" id="adicionar-item">
+                            <i class="fas fa-plus"></i> Adicionar Item
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-right mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Salvar Pedido
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('itens-container');
+    const addButton = document.getElementById('adicionar-item');
+
+    function calcularTotal(row) {
+        const quantidade = parseFloat(row.querySelector('.quantidade').value) || 0;
+        const preco = parseFloat(row.querySelector('.preco').value) || 0;
+        const total = quantidade * preco;
+        row.querySelector('.total').value = total.toFixed(2);
+    }
+
+    function adicionarItem() {
+        const row = document.createElement('div');
+        row.className = 'item-row mb-3';
+        row.innerHTML = `
+            <div class="row">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="itens[]" placeholder="Nome do Item" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="itens[]" placeholder="Descrição">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control quantidade" name="itens[]" placeholder="Quantidade" step="0.01" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control preco" name="itens[]" placeholder="Preço Unitário" step="0.01" required>
+                </div>
+                <div class="col-md-1">
+                    <input type="text" class="form-control total" name="itens[]" placeholder="Total" readonly>
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-danger btn-block remover-item">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(row);
+
+        // Adicionar event listeners para os novos campos
+        const quantidade = row.querySelector('.quantidade');
+        const preco = row.querySelector('.preco');
+        
+        quantidade.addEventListener('input', () => calcularTotal(row));
+        preco.addEventListener('input', () => calcularTotal(row));
+    }
+
+    // Adicionar event listeners para os itens existentes
+    document.querySelectorAll('.item-row').forEach(row => {
+        const quantidade = row.querySelector('.quantidade');
+        const preco = row.querySelector('.preco');
+        
+        quantidade.addEventListener('input', () => calcularTotal(row));
+        preco.addEventListener('input', () => calcularTotal(row));
+    });
+
+    // Event listener para o botão de adicionar item
+    addButton.addEventListener('click', adicionarItem);
+
+    // Event listener para remover itens
+    container.addEventListener('click', function(e) {
+        if (e.target.closest('.remover-item')) {
+            e.target.closest('.item-row').remove();
+        }
+    });
+});
+</script>
+{% endblock %} 
