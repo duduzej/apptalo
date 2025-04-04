@@ -109,9 +109,11 @@ def init_app():
             if not admin:
                 logger.info("Criando usuário admin...")
                 admin = Usuario(
+                    nome='Administrador',
                     email='admin@admin.com',
                     senha=generate_password_hash('admin123'),
-                    tipo='admin'
+                    tipo='admin',
+                    ativo=True
                 )
                 db.session.add(admin)
                 db.session.commit()
