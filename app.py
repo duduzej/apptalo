@@ -46,38 +46,6 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-@app.before_first_request
-def create_tables():
-    try:
-        logger.info("Criando tabelas do banco de dados...")
-        db.create_all()
-        
-        # Criar usuário admin se não existir
-        from models import Usuario
-        admin = Usuario.query.filter_by(email='admin@admin.com').first()
-        if not admin:
-            logger.info("Criando usuário admin...")
-            admin = Usuario(
-                email='admin@admin.com',
-                senha=generate_password_hash('admin123'),
-                tipo='admin'
-            )
-            db.session.add(admin)
-            db.session.commit()
-            logger.info("Usuário admin criado com sucesso!")
-    except Exception as e:
-        logger.error(f"Erro ao criar tabelas: {str(e)}")
-        raise
-
-@app.errorhandler(500)
-def internal_error(error):
-    logger.error(f"Erro 500: {str(error)}")
-    return render_template('500.html'), 500
-
-@app.errorhandler(404)
-def not_found_error(error):
-    return render_template('404.html'), 404
-
 # Modelos
 class Usuario(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -129,6 +97,40 @@ class Pedido(db.Model):
     def calcular_total(self):
         self.valor_total = sum(item.valor_total for item in self.itens)
         return self.valor_total
+
+def init_app():
+    with app.app_context():
+        try:
+            logger.info("Criando tabelas do banco de dados...")
+            db.create_all()
+            
+            # Criar usuário admin se não existir
+            admin = Usuario.query.filter_by(email='admin@admin.com').first()
+            if not admin:
+                logger.info("Criando usuário admin...")
+                admin = Usuario(
+                    email='admin@admin.com',
+                    senha=generate_password_hash('admin123'),
+                    tipo='admin'
+                )
+                db.session.add(admin)
+                db.session.commit()
+                logger.info("Usuário admin criado com sucesso!")
+        except Exception as e:
+            logger.error(f"Erro ao criar tabelas: {str(e)}")
+            raise
+
+# Inicializar o aplicativo
+init_app()
+
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"Erro 500: {str(error)}")
+    return render_template('500.html'), 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -1352,9 +1354,6 @@ def exportar_relatorio_clientes_pdf():
     )
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    
     if os.environ.get('FLASK_ENV') == 'production':
         app.run()
     else:
