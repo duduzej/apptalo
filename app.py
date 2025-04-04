@@ -15,23 +15,68 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.colors import HexColor, black, white, grey, lightgrey
 from sqlalchemy.sql import func, text
+import sys
+import logging
+
+# Configuração de logs
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
 # Configuração do ambiente
 if os.environ.get('FLASK_ENV') == 'production':
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///pedidos.db')
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'sua-chave-secreta-padrao')
+    # Configuração para o Render.com
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pedidos.db'
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'chave-padrao-nao-usar-em-producao')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['DEBUG'] = False
 else:
+    # Configuração para desenvolvimento local
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pedidos.db'
     app.config['SECRET_KEY'] = 'chave-desenvolvimento'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['DEBUG'] = True
 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
+# Inicialização do banco de dados
 db = SQLAlchemy(app)
+
+# Configuração do Login Manager
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+@app.before_first_request
+def create_tables():
+    try:
+        logger.info("Criando tabelas do banco de dados...")
+        db.create_all()
+        
+        # Criar usuário admin se não existir
+        from models import Usuario
+        admin = Usuario.query.filter_by(email='admin@admin.com').first()
+        if not admin:
+            logger.info("Criando usuário admin...")
+            admin = Usuario(
+                email='admin@admin.com',
+                senha=generate_password_hash('admin123'),
+                tipo='admin'
+            )
+            db.session.add(admin)
+            db.session.commit()
+            logger.info("Usuário admin criado com sucesso!")
+    except Exception as e:
+        logger.error(f"Erro ao criar tabelas: {str(e)}")
+        raise
+
+@app.errorhandler(500)
+def internal_error(error):
+    logger.error(f"Erro 500: {str(error)}")
+    return render_template('500.html'), 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
 
 # Modelos
 class Usuario(UserMixin, db.Model):
@@ -1306,22 +1351,9 @@ def exportar_relatorio_clientes_pdf():
         mimetype='application/pdf'
     )
 
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # Criar usuário admin se não existir
-        if not Usuario.query.filter_by(email='admin@admin.com').first():
-            admin = Usuario(
-                email='admin@admin.com',
-                senha=generate_password_hash('admin123'),
-                tipo='admin'
-            )
-            db.session.add(admin)
-            db.session.commit()
     
     if os.environ.get('FLASK_ENV') == 'production':
         app.run()

@@ -4,36 +4,45 @@ from datetime import datetime
 import json
 from flask_login import UserMixin
 
-class Usuario(db.Model, UserMixin):
+class Usuario(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    senha = db.Column(db.String(200), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False, default='operacional')  # 'admin' ou 'operacional'
+
+class Pedido(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    numero = db.Column(db.String(20), unique=True, nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=False)
+    data_pedido = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_previsao_entrega = db.Column(db.DateTime)
+    status = db.Column(db.String(20), nullable=False, default='Em Aberto')
+    valor_total = db.Column(db.Float, nullable=False, default=0.0)
+    itens = db.relationship('ItemPedido', backref='pedido', lazy=True)
+
+class Cliente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    senha = db.Column(db.String(100), nullable=False)
-    tipo = db.Column(db.String(20), nullable=False)
-    ativo = db.Column(db.Boolean, default=True)
-    
+    telefone = db.Column(db.String(20))
+    endereco = db.Column(db.String(200))
+    pedidos = db.relationship('Pedido', backref='cliente', lazy=True)
+
+class ItemPedido(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pedido_id = db.Column(db.Integer, db.ForeignKey('pedido.id'), nullable=False)
+    item = db.Column(db.String(100), nullable=False)
+    descricao = db.Column(db.Text)
+    quantidade = db.Column(db.Integer, nullable=False)
+    valor_unitario = db.Column(db.Float, nullable=False)
+
     def set_senha(self, senha):
         self.senha = generate_password_hash(senha)
     
     def check_senha(self, senha):
         return check_password_hash(self.senha, senha)
 
-class Pedido(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    numero = db.Column(db.String(20), unique=True, nullable=False)
-    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=False)
-    data = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    data_previsao_entrega = db.Column(db.DateTime)
-    itens = db.Column(db.Text, nullable=False)  # JSON string
-    valor_total = db.Column(db.Float, nullable=False)
-    observacoes = db.Column(db.Text)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
-    
-    cliente = db.relationship('Cliente', backref='pedidos')
-    usuario = db.relationship('Usuario', backref='pedidos')
-    
     def __init__(self, **kwargs):
-        super(Pedido, self).__init__(**kwargs)
+        super(ItemPedido, self).__init__(**kwargs)
         self.numero = self.gerar_numero()
     
     def gerar_numero(self):
@@ -50,11 +59,4 @@ class Pedido(db.Model):
     
     @itens.setter
     def itens(self, value):
-        self._itens = json.dumps(value)
-
-class Cliente(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    telefone = db.Column(db.String(20))
-    endereco = db.Column(db.Text) 
+        self._itens = json.dumps(value) 
