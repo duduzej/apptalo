@@ -48,11 +48,15 @@
                             {% if pedido and pedido.itens %}
                                 {% for item in pedido.itens %}
                                 <div class="row item-row mb-3">
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <label class="form-label">Item</label>
                                         <input type="text" class="form-control" name="item[]" value="{{ item.item }}" required>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
+                                        <label class="form-label">Material</label>
+                                        <input type="text" class="form-control" name="material[]" value="{{ item.material }}" required>
+                                    </div>
+                                    <div class="col-md-2">
                                         <label class="form-label">Descrição</label>
                                         <input type="text" class="form-control" name="descricao[]" value="{{ item.descricao }}">
                                     </div>
@@ -62,15 +66,11 @@
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label">Valor Unitário</label>
-                                        <input type="number" class="form-control valor-unitario" name="valor_unitario[]" value="{{ item.valor_unitario }}" step="0.01" min="0" required>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label">Previsão</label>
-                                        <input type="date" class="form-control" name="data_previsao_entrega[]" value="{{ item.data_previsao_entrega.strftime('%Y-%m-%d') if item.data_previsao_entrega else '' }}">
+                                        <input type="number" class="form-control valor-unitario" name="valor_unitario[]" step="0.01" min="0" required>
                                     </div>
                                     <div class="col-md-2">
                                         <label class="form-label">Total</label>
-                                        <input type="text" class="form-control valor-total" value="{{ item.valor_total }}" readonly>
+                                        <input type="text" class="form-control valor-total" readonly>
                                         <button type="button" class="btn btn-danger btn-sm mt-2 remover-item">
                                             <i class="fas fa-trash"></i> Remover
                                         </button>
@@ -79,11 +79,15 @@
                                 {% endfor %}
                             {% else %}
                             <div class="row item-row mb-3">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label class="form-label">Item</label>
                                     <input type="text" class="form-control" name="item[]" required>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
+                                    <label class="form-label">Material</label>
+                                    <input type="text" class="form-control" name="material[]" required>
+                                </div>
+                                <div class="col-md-2">
                                     <label class="form-label">Descrição</label>
                                     <input type="text" class="form-control" name="descricao[]">
                                 </div>
@@ -94,10 +98,6 @@
                                 <div class="col-md-2">
                                     <label class="form-label">Valor Unitário</label>
                                     <input type="number" class="form-control valor-unitario" name="valor_unitario[]" step="0.01" min="0" required>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">Previsão</label>
-                                    <input type="date" class="form-control" name="data_previsao_entrega[]">
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label">Total</label>
@@ -156,11 +156,15 @@ $(document).ready(function() {
     function getNovoItemHtml() {
         return `
             <div class="row item-row mb-3">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Item</label>
                     <input type="text" class="form-control" name="item[]" required>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label class="form-label">Material</label>
+                    <input type="text" class="form-control" name="material[]" required>
+                </div>
+                <div class="col-md-2">
                     <label class="form-label">Descrição</label>
                     <input type="text" class="form-control" name="descricao[]">
                 </div>
@@ -171,10 +175,6 @@ $(document).ready(function() {
                 <div class="col-md-2">
                     <label class="form-label">Valor Unitário</label>
                     <input type="number" class="form-control valor-unitario" name="valor_unitario[]" step="0.01" min="0" required>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Previsão</label>
-                    <input type="date" class="form-control" name="data_previsao_entrega[]">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Total</label>
@@ -189,44 +189,46 @@ $(document).ready(function() {
 
     // Adicionar item
     $('#adicionar-item').click(function() {
-        $('#itens-container').append(getNovoItemHtml());
+        const novoItem = getNovoItemHtml();
+        $('#itens-container').append(novoItem);
+        atualizarEventos();
     });
 
     // Remover item
     $(document).on('click', '.remover-item', function() {
-        if ($('.item-row').length > 1) {
-            $(this).closest('.item-row').remove();
-            calcularTotal();
-        } else {
-            alert('O pedido deve ter pelo menos um item!');
-        }
+        $(this).closest('.item-row').remove();
+        calcularTotalPedido();
     });
 
     // Calcular total do item
     function calcularTotalItem(row) {
-        var quantidade = parseFloat(row.find('.quantidade').val()) || 0;
-        var valorUnitario = parseFloat(row.find('.valor-unitario').val()) || 0;
-        var total = quantidade * valorUnitario;
-        row.find('.valor-total').val(total.toFixed(2));
+        const quantidade = parseFloat($(row).find('.quantidade').val()) || 0;
+        const valorUnitario = parseFloat($(row).find('.valor-unitario').val()) || 0;
+        const total = quantidade * valorUnitario;
+        $(row).find('.valor-total').val(total.toFixed(2));
         return total;
     }
 
     // Calcular total do pedido
-    function calcularTotal() {
-        var total = 0;
+    function calcularTotalPedido() {
+        let total = 0;
         $('.item-row').each(function() {
-            total += calcularTotalItem($(this));
+            total += calcularTotalItem(this);
         });
-        $('#total-pedido').text('R$ ' + total.toFixed(2));
+        $('#total-pedido').text(`R$ ${total.toFixed(2)}`);
     }
 
-    // Eventos para recalcular totais
-    $(document).on('input', '.quantidade, .valor-unitario', function() {
-        calcularTotal();
-    });
+    // Atualizar eventos
+    function atualizarEventos() {
+        $('.quantidade, .valor-unitario').off('input').on('input', function() {
+            calcularTotalItem($(this).closest('.item-row'));
+            calcularTotalPedido();
+        });
+    }
 
-    // Calcular totais iniciais
-    calcularTotal();
+    // Inicializar eventos
+    atualizarEventos();
+    calcularTotalPedido();
 });
 </script>
 {% endblock %} 

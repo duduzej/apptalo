@@ -2,11 +2,13 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Pedidos</h1>
-        <a href="{{ url_for('operacional_novo_pedido') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Novo Pedido
-        </a>
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Pedidos</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('operacional_novo_pedido') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Pedido
+            </a>
+        </div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -17,16 +19,17 @@
         {% endif %}
     {% endwith %}
 
-    <div class="card shadow mb-4">
+    <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                <table class="table table-striped">
                     <thead>
                         <tr>
                             <th>Número</th>
                             <th>Cliente</th>
-                            <th>Data</th>
+                            <th>Data do Pedido</th>
                             <th>Previsão de Entrega</th>
+                            <th>Status</th>
                             <th>Valor Total</th>
                             <th>Ações</th>
                         </tr>
@@ -36,8 +39,13 @@
                         <tr>
                             <td>{{ pedido.numero }}</td>
                             <td>{{ pedido.cliente.nome }}</td>
-                            <td>{{ pedido.data.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ pedido.data_previsao_entrega.strftime('%d/%m/%Y') if pedido.data_previsao_entrega else '-' }}</td>
+                            <td>{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ pedido.data_previsao_entrega.strftime('%d/%m/%Y') if pedido.data_previsao_entrega else 'Não definida' }}</td>
+                            <td>
+                                <span class="badge rounded-pill bg-{{ pedido.status.lower().replace(' ', '-') }}">
+                                    {{ pedido.status }}
+                                </span>
+                            </td>
                             <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
                             <td>
                                 <div class="btn-group" role="group">
@@ -47,7 +55,7 @@
                                     <a href="{{ url_for('operacional_editar_pedido', id=pedido.id) }}" class="btn btn-sm btn-primary">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{{ url_for('operacional_exportar_pdf', id=pedido.id) }}" class="btn btn-sm btn-secondary">
+                                    <a href="{{ url_for('operacional_exportar_pdf', id=pedido.id) }}" class="btn btn-sm btn-secondary" target="_blank">
                                         <i class="fas fa-file-pdf"></i>
                                     </a>
                                 </div>
@@ -60,4 +68,32 @@
         </div>
     </div>
 </div>
+
+<style>
+.bg-aguardando-pagamento {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.bg-aguardando-aprovacao-da-arte {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.bg-em-producao {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.bg-entregue {
+    background-color: #198754;
+    color: #fff;
+}
+
+.bg-cancelado {
+    background-color: #dc3545;
+    color: #fff;
+}
+</style>
+
 {% endblock %} 

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Gerenciar Pedidos</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <button type="button" class="btn btn-danger me-2" onclick="excluirSelecionados()">
+                <i class="fas fa-trash"></i> Excluir Selecionados
+            </button>
+            <button type="button" class="btn btn-danger" onclick="confirmarExcluirTodos()">
+                <i class="fas fa-trash-alt"></i> Excluir Todos
+            </button>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="selecionarTodos" onclick="toggleTodos(this)">
+                            </th>
+                            <th>Número</th>
+                            <th>Cliente</th>
+                            <th>Usuário</th>
+                            <th>Data do Pedido</th>
+                            <th>Previsão de Entrega</th>
+                            <th>Status</th>
+                            <th>Valor Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="pedido-checkbox" value="{{ pedido.id }}">
+                            </td>
+                            <td>{{ pedido.numero }}</td>
+                            <td>{{ pedido.cliente.nome }}</td>
+                            <td>{{ pedido.usuario.nome }}</td>
+                            <td>{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ pedido.data_previsao_entrega.strftime('%d/%m/%Y') if pedido.data_previsao_entrega else 'Não definida' }}</td>
+                            <td>
+                                <span class="badge rounded-pill bg-{{ pedido.status.lower().replace(' ', '-') }}">
+                                    {{ pedido.status }}
+                                </span>
+                            </td>
+                            <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('operacional_visualizar_pedido', id=pedido.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('operacional_exportar_pdf', id=pedido.id) }}" class="btn btn-sm btn-secondary" target="_blank">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="confirmarExclusao({{ pedido.id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-aguardando-pagamento {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.bg-aguardando-aprovacao-da-arte {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.bg-em-producao {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.bg-entregue {
+    background-color: #198754;
+    color: #fff;
+}
+
+.bg-cancelado {
+    background-color: #dc3545;
+    color: #fff;
+}
+</style>
+
+<script>
+function toggleTodos(source) {
+    const checkboxes = document.getElementsByClassName('pedido-checkbox');
+    for (let checkbox of checkboxes) {
+        checkbox.checked = source.checked;
+    }
+}
+
+function getPedidosSelecionados() {
+    const checkboxes = document.getElementsByClassName('pedido-checkbox');
+    const selecionados = [];
+    for (let checkbox of checkboxes) {
+        if (checkbox.checked) {
+            selecionados.push(checkbox.value);
+        }
+    }
+    return selecionados;
+}
+
+function excluirSelecionados() {
+    const selecionados = getPedidosSelecionados();
+    if (selecionados.length === 0) {
+        alert('Selecione pelo menos um pedido para excluir.');
+        return;
+    }
+    
+    if (confirm(`Tem certeza que deseja excluir ${selecionados.length} pedido(s)?`)) {
+        fetch('/admin/pedidos/excluir-multiplos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                pedidos: selecionados
+            })
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Erro ao excluir os pedidos');
+            }
+        });
+    }
+}
+
+function confirmarExcluirTodos() {
+    if (confirm('Tem certeza que deseja excluir TODOS os pedidos? Esta ação não pode ser desfeita!')) {
+        fetch('/admin/pedidos/excluir-todos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Erro ao excluir os pedidos');
+            }
+        });
+    }
+}
+
+function confirmarExclusao(id) {
+    if (confirm('Tem certeza que deseja excluir este pedido?')) {
+        fetch(`/admin/pedidos/${id}/excluir`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Erro ao excluir o pedido');
+            }
+        });
+    }
+}
+</script>
+
+{% endblock %} 

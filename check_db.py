@@ -16,12 +16,13 @@ def check_database():
         
         print("\nTabelas existentes em pedidos.db:")
         for table in tables:
-            print(f"- {table[0]}")
+            print(f"\nTabela: {table[0]}")
             # Mostra a estrutura de cada tabela
             cursor.execute(f"PRAGMA table_info({table[0]})")
             columns = cursor.fetchall()
+            print("Colunas:")
             for col in columns:
-                print(f"  * {col[1]} ({col[2]})")
+                print(f"  - {col[1]} ({col[2]}) {'NOT NULL' if col[3] else 'NULL'}")
         
         conn.close()
         

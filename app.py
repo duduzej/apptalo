@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, make_response
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from reportlab.pdfgen import canvas
@@ -17,6 +16,32 @@ from reportlab.lib.colors import HexColor, black, white, grey, lightgrey
 from sqlalchemy.sql import func, text
 import sys
 import logging
+from flask_mail import Mail, Message
+from itsdangerous import URLSafeTimedSerializer
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Email, EqualTo, Length
+from models import Usuario, Cliente, Pedido, ItemPedido
+from database import db
+
+# Classes de formulário
+class RecuperarSenhaForm(FlaskForm):
+    email = StringField('Email', validators=[
+        DataRequired(message='Email é obrigatório'),
+        Email(message='Email inválido')
+    ])
+    submit = SubmitField('Enviar Link de Recuperação')
+
+class RedefinirSenhaForm(FlaskForm):
+    nova_senha = PasswordField('Nova Senha', validators=[
+        DataRequired(message='Nova senha é obrigatória'),
+        Length(min=6, message='A senha deve ter pelo menos 6 caracteres')
+    ])
+    confirmar_senha = PasswordField('Confirmar Nova Senha', validators=[
+        DataRequired(message='Confirmação de senha é obrigatória'),
+        EqualTo('nova_senha', message='As senhas devem ser iguais')
+    ])
+    submit = SubmitField('Redefinir Senha')
 
 # Configuração de logs
 logging.basicConfig(level=logging.INFO)
@@ -38,65 +63,27 @@ else:
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['DEBUG'] = True
 
+# Configuração do e-mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465  # Alterado para porta SSL
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True  # Usando SSL em vez de TLS
+app.config['MAIL_USERNAME'] = 'eduardojbarbalho@gmail.com'
+app.config['MAIL_PASSWORD'] = 'yvxe yvxw yvxz yvxk'
+app.config['MAIL_DEFAULT_SENDER'] = 'eduardojbarbalho@gmail.com'
+app.config['MAIL_MAX_EMAILS'] = None
+app.config['MAIL_ASCII_ATTACHMENTS'] = False
+
+mail = Mail(app)
+serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
 # Inicialização do banco de dados
-db = SQLAlchemy(app)
+db.init_app(app)
 
 # Configuração do Login Manager
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-
-# Modelos
-class Usuario(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    senha = db.Column(db.String(200), nullable=False)
-    tipo = db.Column(db.String(20), nullable=False)  # 'admin' ou 'operacional'
-    ativo = db.Column(db.Boolean, default=True)
-    pedidos = db.relationship('Pedido', backref='usuario', lazy=True)
-
-    def set_senha(self, senha):
-        self.senha = generate_password_hash(senha)
-
-    def check_senha(self, senha):
-        return check_password_hash(self.senha, senha)
-
-class Cliente(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120))
-    telefone = db.Column(db.String(20))
-    endereco = db.Column(db.Text)
-    pedidos = db.relationship('Pedido', backref='cliente', lazy=True)
-
-class ItemPedido(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    pedido_id = db.Column(db.Integer, db.ForeignKey('pedido.id'), nullable=False)
-    item = db.Column(db.String(100), nullable=False)
-    descricao = db.Column(db.Text)
-    quantidade = db.Column(db.Integer, nullable=False)
-    valor_unitario = db.Column(db.Float, nullable=False)
-    
-    @property
-    def valor_total(self):
-        return self.quantidade * self.valor_unitario
-
-class Pedido(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    numero = db.Column(db.String(20), unique=True, nullable=False)
-    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=False)
-    data_pedido = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    data_previsao_entrega = db.Column(db.DateTime)
-    status = db.Column(db.String(20), default='Em Aberto')  # Em Aberto, Em Produção, Entregue, Cancelado
-    valor_total = db.Column(db.Float, nullable=False, default=0)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
-    observacoes = db.Column(db.Text)
-    itens = db.relationship('ItemPedido', backref='pedido', lazy=True, cascade='all, delete-orphan')
-
-    def calcular_total(self):
-        self.valor_total = sum(item.valor_total for item in self.itens)
-        return self.valor_total
 
 def init_app():
     with app.app_context():
@@ -237,6 +224,7 @@ def novo_pedido():
                     pedido_id=pedido.id,
                     item=itens[i],
                     descricao=descricoes[i],
+                    material=valores[i],
                     quantidade=int(quantidades[i]),
                     valor_unitario=float(valores[i].replace(',', '.'))
                 )
@@ -278,6 +266,7 @@ def editar_pedido(id):
                     pedido_id=pedido.id,
                     item=itens[i],
                     descricao=descricoes[i],
+                    material=valores[i],
                     quantidade=int(quantidades[i]),
                     valor_unitario=float(valores[i].replace(',', '.'))
                 )
@@ -326,12 +315,14 @@ def exportar_pdf(id):
     p.setFont("Times-Roman", 12)
     p.drawString(1*inch, 8.5*inch, f"Número do Pedido: {pedido.numero}")
     p.drawString(1*inch, 8*inch, f"Cliente: {pedido.cliente.nome}")
-    p.drawString(1*inch, 7.5*inch, f"Data do Pedido: {pedido.data_pedido.strftime('%d/%m/%Y')}")
+    p.drawString(1*inch, 7.5*inch, f"Telefone: {pedido.cliente.telefone or 'Não informado'}")
+    p.drawString(1*inch, 7*inch, f"Endereço: {pedido.cliente.endereco or 'Não informado'}")
+    p.drawString(1*inch, 6.5*inch, f"Data do Pedido: {pedido.data_pedido.strftime('%d/%m/%Y')}")
     if pedido.data_previsao_entrega:
-        p.drawString(1*inch, 7*inch, f"Previsão de Entrega: {pedido.data_previsao_entrega.strftime('%d/%m/%Y')}")
-        y_start = 6.5*inch
+        p.drawString(1*inch, 6*inch, f"Previsão de Entrega: {pedido.data_previsao_entrega.strftime('%d/%m/%Y')}")
+        y_start = 5.5*inch
     else:
-        y_start = 7*inch
+        y_start = 6*inch
     p.drawString(1*inch, y_start, f"Criado por: {pedido.usuario.nome}")
     
     # Adicionar tabela de itens
@@ -693,7 +684,7 @@ def operacional_novo_pedido():
             cliente_id=cliente_id,
             data_pedido=datetime.now(),
             data_previsao_entrega=data_previsao_entrega,
-            status='Em Aberto',
+            status='Aguardando Pagamento',
             usuario_id=current_user.id,
             observacoes=observacoes,
             valor_total=0
@@ -705,6 +696,7 @@ def operacional_novo_pedido():
         # Adicionar itens se houver
         itens = request.form.getlist('item[]')
         descricoes = request.form.getlist('descricao[]')
+        materiais = request.form.getlist('material[]')  # Novo campo
         quantidades = request.form.getlist('quantidade[]')
         valores = request.form.getlist('valor_unitario[]')
         
@@ -712,7 +704,7 @@ def operacional_novo_pedido():
         for i in range(len(itens)):
             if itens[i].strip():  # Só adiciona se o item não estiver vazio
                 quantidade = int(quantidades[i])
-                valor_unitario = float(valores[i])
+                valor_unitario = float(valores[i].replace(',', '.'))
                 valor_total = quantidade * valor_unitario
                 total_pedido += valor_total
                 
@@ -720,6 +712,7 @@ def operacional_novo_pedido():
                     pedido_id=pedido.id,
                     item=itens[i],
                     descricao=descricoes[i],
+                    material=materiais[i],  # Novo campo
                     quantidade=quantidade,
                     valor_unitario=valor_unitario
                 )
@@ -756,6 +749,7 @@ def operacional_editar_pedido(id):
         # Adicionar novos itens
         itens = request.form.getlist('item[]')
         descricoes = request.form.getlist('descricao[]')
+        materiais = request.form.getlist('material[]')  # Novo campo
         quantidades = request.form.getlist('quantidade[]')
         valores = request.form.getlist('valor_unitario[]')
         
@@ -763,7 +757,7 @@ def operacional_editar_pedido(id):
         for i in range(len(itens)):
             if itens[i].strip():  # Só adiciona se o item não estiver vazio
                 quantidade = int(quantidades[i])
-                valor_unitario = float(valores[i])
+                valor_unitario = float(valores[i].replace(',', '.'))
                 valor_total = quantidade * valor_unitario
                 total_pedido += valor_total
                 
@@ -771,6 +765,7 @@ def operacional_editar_pedido(id):
                     pedido_id=pedido.id,
                     item=itens[i],
                     descricao=descricoes[i],
+                    material=materiais[i],  # Novo campo
                     quantidade=quantidade,
                     valor_unitario=valor_unitario
                 )
@@ -828,6 +823,8 @@ def operacional_exportar_pdf(id):
     # Informações do cliente e pedido
     data = [
         ["Cliente:", pedido.cliente.nome],
+        ["Telefone:", pedido.cliente.telefone or "Não informado"],
+        ["Endereço:", pedido.cliente.endereco or "Não informado"],
         ["Data do Pedido:", pedido.data_pedido.strftime('%d/%m/%Y')]
     ]
     
@@ -851,7 +848,7 @@ def operacional_exportar_pdf(id):
     elements.append(Spacer(1, 20))
     
     # Tabela de itens
-    items_data = [['Item', 'Descrição', 'Qtd', 'Valor Unit.', 'Total']]
+    items_data = [['Item', 'Material', 'Descrição', 'Qtd', 'Valor Unit.', 'Total']]
     total_pedido = 0
     
     for item in pedido.itens:
@@ -859,6 +856,7 @@ def operacional_exportar_pdf(id):
         total_pedido += valor_total
         items_data.append([
             item.item,
+            item.material or "Não informado",
             item.descricao,
             str(item.quantidade),
             f"R$ {item.valor_unitario:.2f}",
@@ -866,10 +864,10 @@ def operacional_exportar_pdf(id):
         ])
     
     # Adicionar linha do total
-    items_data.append(['', '', '', 'Total:', f"R$ {total_pedido:.2f}"])
+    items_data.append(['', '', '', '', 'Total:', f"R$ {total_pedido:.2f}"])
     
     # Criar tabela de itens
-    items_table = Table(items_data, colWidths=[100, 200, 50, 80, 90])
+    items_table = Table(items_data, colWidths=[80, 80, 180, 50, 80, 80])
     items_table.setStyle(TableStyle([
         ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
         ('FONTSIZE', (0, 0), (-1, -1), 10),
@@ -878,8 +876,8 @@ def operacional_exportar_pdf(id):
         ('TEXTCOLOR', (0, 0), (-1, 0), white),  # Branco
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
-        ('FONTNAME', (-2, -1), (-1, -1), 'Helvetica-Bold'),
+        ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),  # Alinhar números à direita
+        ('FONTNAME', (-2, -1), (-1, -1), 'Helvetica-Bold'),  # Total em negrito
     ]))
     elements.append(items_table)
     
@@ -906,6 +904,7 @@ def operacional_exportar_pdf(id):
     response = make_response(buffer.getvalue())
     response.mimetype = 'application/pdf'
     response.headers['Content-Disposition'] = f'inline; filename=pedido_{pedido.numero}.pdf'
+    
     return response
 
 @app.route('/admin/clientes')
@@ -991,7 +990,14 @@ def operacional_alterar_status_pedido(id):
     novo_status = data.get('status')
     
     # Validar o status
-    status_validos = ['Em Aberto', 'Em Produção', 'Entregue', 'Cancelado']
+    status_validos = [
+        'Aguardando Pagamento',
+        'Aguardando aprovação da arte',
+        'Em Aberto',
+        'Em Produção',
+        'Entregue',
+        'Cancelado'
+    ]
     if novo_status not in status_validos:
         return jsonify({'status': 'error', 'message': 'Status inválido!'}), 400
     
@@ -1354,6 +1360,134 @@ def exportar_relatorio_clientes_pdf():
         download_name='relatorio_clientes.pdf',
         mimetype='application/pdf'
     )
+
+def enviar_email_recuperacao(email):
+    token = serializer.dumps(email, salt='recuperar-senha')
+    link = url_for('redefinir_senha', token=token, _external=True)
+    
+    msg = Message('Recuperação de Senha',
+                 sender=app.config['MAIL_USERNAME'],
+                 recipients=[email])
+    msg.body = f'''Para redefinir sua senha, acesse o link abaixo:
+
+{link}
+
+Se você não solicitou a redefinição de senha, ignore este email.
+
+O link expira em 1 hora.
+'''
+    try:
+        logger.info(f"Tentando enviar email para {email}")
+        mail.send(msg)
+        logger.info(f"Email enviado com sucesso para {email}")
+        return True
+    except Exception as e:
+        logger.error(f"Erro detalhado ao enviar email: {str(e)}")
+        logger.error(f"Tipo do erro: {type(e)}")
+        return False
+
+@app.route('/esqueceu-senha', methods=['GET', 'POST'])
+def esqueceu_senha():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    form = RecuperarSenhaForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        usuario = Usuario.query.filter_by(email=email).first()
+        
+        if usuario:
+            if enviar_email_recuperacao(email):
+                flash('Um email com instruções para redefinir sua senha foi enviado.', 'info')
+                return redirect(url_for('login'))
+            else:
+                flash('Erro ao enviar email. Por favor, tente novamente mais tarde.', 'danger')
+        else:
+            flash('Email não encontrado.', 'danger')
+    
+    return render_template('esqueceu_senha.html', form=form)
+
+@app.route('/redefinir-senha/<token>', methods=['GET', 'POST'])
+def redefinir_senha(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    try:
+        email = serializer.loads(token, salt='recuperar-senha', max_age=3600)  # 1 hora
+    except:
+        flash('O link de recuperação é inválido ou expirou.', 'danger')
+        return redirect(url_for('esqueceu_senha'))
+    
+    form = RedefinirSenhaForm()
+    if form.validate_on_submit():
+        usuario = Usuario.query.filter_by(email=email).first()
+        if usuario:
+            usuario.senha = generate_password_hash(form.nova_senha.data)
+            db.session.commit()
+            flash('Sua senha foi alterada com sucesso!', 'success')
+            return redirect(url_for('login'))
+    
+    return render_template('redefinir_senha.html', form=form)
+
+@app.route('/admin/pedidos')
+@login_required
+def admin_pedidos():
+    if current_user.tipo != 'admin':
+        flash('Acesso não autorizado!', 'danger')
+        return redirect(url_for('index'))
+    
+    # Buscar todos os pedidos de todos os usuários
+    pedidos = Pedido.query.order_by(Pedido.data_pedido.desc()).all()
+    return render_template('admin/pedidos.html', pedidos=pedidos)
+
+@app.route('/admin/pedidos/<int:id>/excluir', methods=['POST'])
+@login_required
+def admin_excluir_pedido(id):
+    if current_user.tipo != 'admin':
+        flash('Acesso não autorizado!', 'danger')
+        return redirect(url_for('index'))
+    
+    pedido = Pedido.query.get_or_404(id)
+    
+    # Excluir o pedido e seus itens
+    db.session.delete(pedido)
+    db.session.commit()
+    
+    flash('Pedido excluído com sucesso!', 'success')
+    return redirect(url_for('admin_pedidos'))
+
+@app.route('/admin/pedidos/excluir-multiplos', methods=['POST'])
+@login_required
+def admin_excluir_multiplos_pedidos():
+    if current_user.tipo != 'admin':
+        return jsonify({'error': 'Acesso não autorizado'}), 403
+    
+    data = request.get_json()
+    pedidos_ids = data.get('pedidos', [])
+    
+    try:
+        # Excluir os pedidos selecionados
+        Pedido.query.filter(Pedido.id.in_(pedidos_ids)).delete(synchronize_session=False)
+        db.session.commit()
+        return jsonify({'message': 'Pedidos excluídos com sucesso'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Erro ao excluir pedidos'}), 500
+
+@app.route('/admin/pedidos/excluir-todos', methods=['POST'])
+@login_required
+def admin_excluir_todos_pedidos():
+    if current_user.tipo != 'admin':
+        return jsonify({'error': 'Acesso não autorizado'}), 403
+    
+    try:
+        # Excluir todos os pedidos
+        Pedido.query.delete()
+        db.session.commit()
+        return jsonify({'message': 'Todos os pedidos foram excluídos com sucesso'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Erro ao excluir pedidos'}), 500
 
 if __name__ == '__main__':
     if os.environ.get('FLASK_ENV') == 'production':

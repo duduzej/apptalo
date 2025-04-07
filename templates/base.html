@@ -184,8 +184,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'admin_pedidos' %}active{% endif %}" href="{{ url_for('admin_pedidos') }}">
+                                <i class="fas fa-clipboard-list"></i> Pedidos
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'admin_relatorios' %}active{% endif %}" href="{{ url_for('admin_relatorios') }}">
-                                <i class="fas fa-chart-bar"></i> Relatórios
+                                <i class="fas fa-file-alt"></i> Relatórios
                             </a>
                         </li>
                         {% else %}

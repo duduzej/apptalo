@@ -16,8 +16,10 @@
                     <i class="fas fa-tasks"></i> Status: {{ pedido.status }}
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="statusDropdown">
-                    <li><a class="dropdown-item {% if pedido.status == 'Em Aberto' %}active{% endif %}" 
-                          href="#" onclick="alterarStatus('Em Aberto')">Em Aberto</a></li>
+                    <li><a class="dropdown-item {% if pedido.status == 'Aguardando Pagamento' %}active{% endif %}" 
+                          href="#" onclick="alterarStatus('Aguardando Pagamento')">Aguardando Pagamento</a></li>
+                    <li><a class="dropdown-item {% if pedido.status == 'Aguardando aprovação da arte' %}active{% endif %}" 
+                          href="#" onclick="alterarStatus('Aguardando aprovação da arte')">Aguardando aprovação da arte</a></li>
                     <li><a class="dropdown-item {% if pedido.status == 'Em Produção' %}active{% endif %}" 
                           href="#" onclick="alterarStatus('Em Produção')">Em Produção</a></li>
                     <li><a class="dropdown-item {% if pedido.status == 'Entregue' %}active{% endif %}" 
@@ -26,63 +28,61 @@
                           href="#" onclick="alterarStatus('Cancelado')">Cancelado</a></li>
                 </ul>
             </div>
-            <a href="{{ url_for('operacional_exportar_pdf', id=pedido.id) }}" class="btn btn-danger" target="_blank">
-                <i class="fas fa-file-pdf"></i> Gerar PDF
+            <a href="{{ url_for('operacional_exportar_pdf', id=pedido.id) }}" class="btn btn-secondary">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
             </a>
         </div>
     </div>
 
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-6">
             <div class="card mb-4">
                 <div class="card-body">
                     <h5 class="card-title">Informações do Pedido</h5>
                     <hr>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <dl class="row">
-                                <dt class="col-sm-4">Número do Pedido:</dt>
-                                <dd class="col-sm-8">{{ pedido.numero }}</dd>
+                    <dl class="row">
+                        <dt class="col-sm-4">Número do Pedido:</dt>
+                        <dd class="col-sm-8">{{ pedido.numero }}</dd>
 
-                                <dt class="col-sm-4">Cliente:</dt>
-                                <dd class="col-sm-8">{{ pedido.cliente.nome }}</dd>
+                        <dt class="col-sm-4">Cliente:</dt>
+                        <dd class="col-sm-8">{{ pedido.cliente.nome }}</dd>
 
-                                <dt class="col-sm-4">Data do Pedido:</dt>
-                                <dd class="col-sm-8">{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</dd>
-                            </dl>
-                        </div>
-                        <div class="col-md-6">
-                            <dl class="row">
-                                <dt class="col-sm-4">Status:</dt>
-                                <dd class="col-sm-8">
-                                    {% set status_class = {
-                                        'Em Aberto': 'bg-em-aberto',
-                                        'Em Produção': 'bg-em-producao',
-                                        'Entregue': 'bg-entregue',
-                                        'Cancelado': 'bg-cancelado'
-                                    } %}
-                                    <span class="badge {{ status_class[pedido.status] }}">
-                                        {{ pedido.status }}
-                                    </span>
-                                </dd>
+                        <dt class="col-sm-4">Data do Pedido:</dt>
+                        <dd class="col-sm-8">{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</dd>
 
-                                <dt class="col-sm-4">Criado por:</dt>
-                                <dd class="col-sm-8">{{ pedido.usuario.nome }}</dd>
-                            </dl>
-                        </div>
-                    </div>
+                        <dt class="col-sm-4">Previsão de Entrega:</dt>
+                        <dd class="col-sm-8">
+                            {% if pedido.data_previsao_entrega %}
+                                {{ pedido.data_previsao_entrega.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                Não definida
+                            {% endif %}
+                        </dd>
 
-                    {% if pedido.observacoes %}
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h6>Observações:</h6>
-                            <p>{{ pedido.observacoes }}</p>
-                        </div>
-                    </div>
-                    {% endif %}
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge rounded-pill bg-{{ pedido.status|lower|replace(' ', '-')|replace('ç', 'c')|replace('ã', 'a') }}">
+                                {{ pedido.status }}
+                            </span>
+                        </dd>
+                    </dl>
                 </div>
             </div>
+        </div>
 
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Observações</h5>
+                    <hr>
+                    <p class="card-text">{{ pedido.observacoes if pedido.observacoes else 'Nenhuma observação' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Itens do Pedido</h5>
@@ -92,6 +92,7 @@
                             <thead>
                                 <tr>
                                     <th>Item</th>
+                                    <th>Material</th>
                                     <th>Descrição</th>
                                     <th class="text-center">Quantidade</th>
                                     <th>Previsão de Entrega</th>
@@ -100,12 +101,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set total_pedido = 0 %}
+                                {% set total_pedido = namespace(value=0) %}
                                 {% for item in pedido.itens %}
                                 {% set valor_total_item = item.quantidade * item.valor_unitario %}
-                                {% set total_pedido = total_pedido + valor_total_item %}
+                                {% set total_pedido.value = total_pedido.value + valor_total_item %}
                                 <tr>
                                     <td>{{ item.item }}</td>
+                                    <td>{{ item.material }}</td>
                                     <td>{{ item.descricao }}</td>
                                     <td class="text-center">{{ item.quantidade }}</td>
                                     <td>
@@ -122,8 +124,8 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="5" class="text-end"><strong>Total do Pedido:</strong></td>
-                                    <td class="text-end"><strong>R$ {{ "%.2f"|format(total_pedido) }}</strong></td>
+                                    <td colspan="6" class="text-end"><strong>Total do Pedido:</strong></td>
+                                    <td class="text-end"><strong>R$ {{ "%.2f"|format(total_pedido.value) }}</strong></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -135,27 +137,58 @@
 </div>
 
 <style>
+/* Cores para os status dos pedidos */
+.bg-aguardando-pagamento {
+    background-color: #ffc107; /* Amarelo */
+    color: #000;
+}
+
+.bg-aguardando-aprovacao-da-arte {
+    background-color: #9933CC; /* Roxo */
+    color: #fff;
+}
+
 .bg-em-aberto {
-    background-color: #ffc107 !important;
-    color: #000 !important;
+    background-color: #6c757d; /* Cinza */
+    color: #fff;
 }
+
 .bg-em-producao {
-    background-color: #17a2b8 !important;
-    color: #fff !important;
+    background-color: #0d6efd; /* Azul */
+    color: #fff;
 }
+
 .bg-entregue {
-    background-color: #28a745 !important;
-    color: #fff !important;
+    background-color: #198754; /* Verde */
+    color: #fff;
 }
+
 .bg-cancelado {
-    background-color: #dc3545 !important;
-    color: #fff !important;
+    background-color: #dc3545; /* Vermelho */
+    color: #fff;
+}
+
+/* Adicionar hover effect para melhor feedback visual */
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Estilo para o badge do status atual */
+.badge {
+    font-size: 0.9em;
+    padding: 0.5em 0.8em;
 }
 </style>
 
+{% block scripts %}
 <script>
 function alterarStatus(novoStatus) {
-    if (confirm('Deseja realmente alterar o status do pedido para ' + novoStatus + '?')) {
+    if (confirm('Deseja alterar o status do pedido para "' + novoStatus + '"?')) {
         fetch('/operacional/pedidos/{{ pedido.id }}/status', {
             method: 'POST',
             headers: {
@@ -170,14 +203,16 @@ function alterarStatus(novoStatus) {
             if (data.status === 'success') {
                 location.reload();
             } else {
-                alert('Erro ao alterar status: ' + data.message);
+                alert(data.message || 'Erro ao alterar o status do pedido');
             }
         })
         .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro ao alterar status do pedido');
+            console.error('Error:', error);
+            alert('Erro ao alterar o status do pedido');
         });
     }
 }
 </script>
+{% endblock %}
+
 {% endblock %} 
