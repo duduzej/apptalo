@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Minha Conta</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="razao_social" class="form-label">Razão Social</label>
+                    <input type="text" class="form-control" id="razao_social" name="razao_social" value="{{ dados.razao_social }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="cnpj" class="form-label">CNPJ</label>
+                    <input type="text" class="form-control" id="cnpj" name="cnpj" value="{{ dados.cnpj }}">
+                </div>
+                <div class="mb-3">
+                    <label for="endereco" class="form-label">Endereço</label>
+                    <input type="text" class="form-control" id="endereco" name="endereco" value="{{ dados.endereco }}">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="telefone" class="form-label">Telefone</label>
+                    <input type="text" class="form-control" id="telefone" name="telefone" value="{{ dados.telefone }}">
+                </div>
+                <div class="mb-3">
+                    <label for="whatsapp" class="form-label">WhatsApp</label>
+                    <input type="text" class="form-control" id="whatsapp" name="whatsapp" value="{{ dados.whatsapp }}">
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">E-mail</label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{ dados.email }}">
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="logo" class="form-label">Logo da Empresa</label>
+                    <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
+                    <small class="text-muted">Formatos aceitos: PNG, JPG, JPEG. Tamanho máximo: 2MB.</small>
+                </div>
+                {% if dados.logo %}
+                <div class="mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Logo Atual</h5>
+                            <img src="{{ url_for('static', filename=dados.logo) }}" alt="Logo atual" class="img-thumbnail" style="max-height: 100px;">
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removerLogo()">
+                                    <i class="fas fa-trash"></i> Remover Logo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Salvar Alterações
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function removerLogo() {
+    if (confirm('Tem certeza que deseja remover a logo?')) {
+        window.location.href = "{{ url_for('admin_remover_logo') }}";
+    }
+}
+</script>
+{% endblock %} 

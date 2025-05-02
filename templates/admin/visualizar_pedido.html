@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Visualizar Pedido</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('admin.pedidos') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <a href="{{ url_for('operacional_exportar_pdf', id=pedido.id) }}" class="btn btn-secondary" target="_blank">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Informações do Pedido</h5>
+                    <hr>
+                    <dl class="row">
+                        <dt class="col-sm-4">Número do Pedido:</dt>
+                        <dd class="col-sm-8">{{ pedido.numero }}</dd>
+
+                        <dt class="col-sm-4">Cliente:</dt>
+                        <dd class="col-sm-8">{{ pedido.cliente.nome }}</dd>
+
+                        <dt class="col-sm-4">Usuário:</dt>
+                        <dd class="col-sm-8">{{ pedido.usuario.nome }}</dd>
+
+                        <dt class="col-sm-4">Data do Pedido:</dt>
+                        <dd class="col-sm-8">{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</dd>
+
+                        <dt class="col-sm-4">Previsão de Entrega:</dt>
+                        <dd class="col-sm-8">
+                            {% if pedido.data_previsao_entrega %}
+                                {{ pedido.data_previsao_entrega.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                Não definida
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge rounded-pill bg-{{ pedido.status|lower|replace(' ', '-')|replace('ç', 'c')|replace('ã', 'a') }}">
+                                {{ pedido.status }}
+                            </span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Observações</h5>
+                    <hr>
+                    <p class="card-text">{{ pedido.observacoes if pedido.observacoes else 'Nenhuma observação' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Itens do Pedido</h5>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Material</th>
+                            <th>Descrição</th>
+                            <th class="text-center">Quantidade</th>
+                            <th>Previsão de Entrega</th>
+                            <th class="text-end">Valor Unitário</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set total_pedido = namespace(value=0) %}
+                        {% for item in pedido.itens %}
+                        {% set valor_total_item = item.quantidade * item.valor_unitario %}
+                        {% set total_pedido.value = total_pedido.value + valor_total_item %}
+                        <tr>
+                            <td>{{ item.item }}</td>
+                            <td>{{ item.material }}</td>
+                            <td>{{ item.descricao }}</td>
+                            <td class="text-center">{{ item.quantidade }}</td>
+                            <td>
+                                {% if item.data_previsao_entrega %}
+                                    {{ item.data_previsao_entrega.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    Não definida
+                                {% endif %}
+                            </td>
+                            <td class="text-end">R$ {{ "%.2f"|format(item.valor_unitario) }}</td>
+                            <td class="text-end">R$ {{ "%.2f"|format(valor_total_item) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6" class="text-end"><strong>Total do Pedido:</strong></td>
+                            <td class="text-end"><strong>R$ {{ "%.2f"|format(total_pedido.value) }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-aguardando-pagamento {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.bg-aguardando-aprovacao-da-arte {
+    background-color: #9933CC;
+    color: #fff;
+}
+
+.bg-em-producao {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.bg-entregue {
+    background-color: #198754;
+    color: #fff;
+}
+
+.bg-cancelado {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.badge {
+    font-size: 0.9em;
+    padding: 0.5em 0.8em;
+}
+</style>
+
+{% endblock %} 

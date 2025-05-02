@@ -7,24 +7,6 @@
     </div>
 
     <div class="row">
-        <!-- Relatório de Clientes -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Relatório de Clientes</h5>
-                    <p class="card-text">Análise detalhada dos clientes, incluindo total de pedidos, valores, status predominante e ticket médio.</p>
-                    <div class="d-flex gap-2">
-                        <a href="{{ url_for('admin_relatorio_clientes') }}" class="btn btn-primary">
-                            <i class="fas fa-users"></i> Visualizar
-                        </a>
-                        <a href="{{ url_for('exportar_relatorio_clientes_pdf') }}" class="btn btn-danger">
-                            <i class="fas fa-file-pdf"></i> Exportar PDF
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Relatório de Pedidos -->
         <div class="col-md-6 mb-4">
             <div class="card h-100">
@@ -34,17 +16,20 @@
                     <form id="formRelatorioPedidos" method="GET" action="{{ url_for('admin_visualizar_relatorio_pedidos') }}">
                         <div class="mb-3">
                             <label for="data_inicio" class="form-label">Data Inicial</label>
-                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" required>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio" 
+                                   value="{{ hoje.replace(day=1).strftime('%Y-%m-%d') }}" required>
                         </div>
                         <div class="mb-3">
                             <label for="data_fim" class="form-label">Data Final</label>
-                            <input type="date" class="form-control" id="data_fim" name="data_fim" required>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim" 
+                                   value="{{ hoje.strftime('%Y-%m-%d') }}" required>
                         </div>
                         <div class="mb-3">
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select" id="status" name="status">
-                                <option value="">Todos</option>
-                                <option value="Em Aberto">Em Aberto</option>
+                                <option value="Todos">Todos</option>
+                                <option value="Aguardando Pagamento">Aguardando Pagamento</option>
+                                <option value="Aguardando Aprovação da Arte">Aguardando Aprovação da Arte</option>
                                 <option value="Em Produção">Em Produção</option>
                                 <option value="Entregue">Entregue</option>
                                 <option value="Cancelado">Cancelado</option>
@@ -62,6 +47,35 @@
                 </div>
             </div>
         </div>
+
+        <!-- Relatório de Clientes -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Relatório de Clientes</h5>
+                    <p class="card-text">Análise detalhada dos clientes, incluindo total de pedidos, valores, status predominante e ticket médio.</p>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('admin_relatorio_clientes') }}" class="btn btn-primary">
+                            <i class="fas fa-users"></i> Visualizar
+                        </a>
+                        <a href="{{ url_for('exportar_relatorio_clientes_pdf') }}" class="btn btn-danger">
+                            <i class="fas fa-file-pdf"></i> Exportar PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Definir data mínima como primeiro dia do mês atual
+    var hoje = new Date();
+    var primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    
+    document.getElementById('data_inicio').valueAsDate = primeiroDiaMes;
+    document.getElementById('data_fim').valueAsDate = hoje;
+});
+</script>
 {% endblock %} 

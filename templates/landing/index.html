@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaloApp - Sistema de Gestão de Pedidos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-bg: #ecf0f1;
+            --dark-text: #2c3e50;
+            --light-text: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background-color: var(--primary-color);
+            padding: 15px 0;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand {
+            color: var(--light-text) !important;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-link {
+            color: var(--light-text) !important;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--light-text);
+            padding: 120px 0 100px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(to bottom right, transparent 49%, var(--light-bg) 50%);
+        }
+
+        .hero-content {
+            padding: 2rem 0;
+        }
+
+        .hero-image {
+            padding: 2rem;
+            position: relative;
+        }
+
+        .hero-image img {
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .hero-image img:hover {
+            transform: translateY(-10px);
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 15px 0;
+            height: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+        }
+
+        .feature-card ul li {
+            margin-bottom: 10px;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .feature-card ul li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+        }
+
+        /* Benefits Section */
+        .benefits-section {
+            background-color: var(--light-bg);
+            padding: 80px 0;
+        }
+
+        .benefit-item {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .benefit-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .benefit-icon {
+            font-size: 3rem;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background-color: var(--accent-color);
+            color: var(--light-text);
+            padding: 80px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        .btn-light {
+            font-weight: 600;
+            border-radius: 30px;
+            padding: 12px 30px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-light:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--primary-color);
+            color: var(--light-text);
+            padding: 40px 0;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 991.98px) {
+            .navbar {
+                padding: 10px 0;
+            }
+
+            .hero-section {
+                padding: 100px 0 80px;
+            }
+
+            .hero-content {
+                text-align: center;
+                margin-bottom: 2rem;
+            }
+
+            .hero-image {
+                padding: 1rem;
+            }
+
+            .feature-card {
+                margin-bottom: 30px;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .hero-section {
+                padding: 80px 0 60px;
+            }
+
+            .display-4 {
+                font-size: 2.5rem;
+            }
+
+            .lead {
+                font-size: 1.1rem;
+            }
+
+            .benefit-item {
+                margin-bottom: 30px;
+            }
+
+            .cta-section {
+                padding: 60px 0;
+            }
+
+            .btn-lg {
+                padding: 10px 25px;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .navbar-brand {
+                font-size: 1.25rem;
+            }
+
+            .hero-section {
+                padding: 60px 0 40px;
+            }
+
+            .display-4 {
+                font-size: 2rem;
+            }
+
+            .feature-card {
+                padding: 20px;
+            }
+
+            .benefit-icon {
+                font-size: 2.5rem;
+            }
+
+            h4 {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Pricing Section */
+        .pricing-section {
+            padding: 80px 0;
+            background-color: var(--light-bg);
+        }
+
+        .pricing-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 15px 0;
+            height: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .pricing-card.popular {
+            border: 2px solid var(--secondary-color);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: 20px;
+            right: -35px;
+            background: var(--secondary-color);
+            color: white;
+            padding: 5px 40px;
+            transform: rotate(45deg);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .price {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 20px 0;
+        }
+
+        .price small {
+            font-size: 1rem;
+            color: #666;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 1.2rem;
+        }
+
+        .savings {
+            color: var(--accent-color);
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        /* CTA Form */
+        .cta-form {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .form-control {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">TaloApp</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#funcionalidades">Funcionalidades</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#beneficios">Benefícios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary ms-2" href="{{ url_for('login') }}">Acessar Sistema</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 hero-content">
+                    <h1 class="display-4 fw-bold mb-4">Gerencie seus Pedidos com Eficiência</h1>
+                    <p class="lead mb-4">Sistema completo para gestão de pedidos, clientes e relatórios. Ideal para empresas que buscam organização e produtividade.</p>
+                    <a href="{{ url_for('login') }}" class="btn btn-light btn-lg">Começar Agora</a>
+                </div>
+                <div class="col-lg-6 hero-image">
+                    <img src="{{ url_for('static', filename='img/screenshot-pedidos.png') }}" alt="Screenshot do Sistema" class="img-fluid rounded shadow">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5" id="funcionalidades">
+        <div class="container">
+            <h2 class="text-center mb-5">Funcionalidades Principais</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card h-100">
+                        <i class="fas fa-shopping-cart feature-icon"></i>
+                        <h3>Gestão de Pedidos</h3>
+                        <ul class="list-unstyled">
+                            <li>Cadastro e edição de pedidos</li>
+                            <li>Acompanhamento de status</li>
+                            <li>Histórico completo</li>
+                            <li>Exportação em PDF</li>
+                            <li>Previsão de entrega</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card h-100">
+                        <i class="fas fa-users feature-icon"></i>
+                        <h3>Gestão de Clientes</h3>
+                        <ul class="list-unstyled">
+                            <li>Cadastro de clientes</li>
+                            <li>Histórico de pedidos</li>
+                            <li>Dados de contato</li>
+                            <li>Endereços</li>
+                            <li>Relatórios por cliente</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card h-100">
+                        <i class="fas fa-chart-line feature-icon"></i>
+                        <h3>Relatórios e Análises</h3>
+                        <ul class="list-unstyled">
+                            <li>Dashboard gerencial</li>
+                            <li>Relatórios de vendas</li>
+                            <li>Análise de clientes</li>
+                            <li>Estatísticas de pedidos</li>
+                            <li>Exportação em PDF</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="benefits-section" id="beneficios">
+        <div class="container">
+            <h2 class="text-center mb-5">Benefícios do Sistema</h2>
+            <div class="row g-4">
+                <div class="col-sm-6 col-md-3">
+                    <div class="benefit-item">
+                        <i class="fas fa-tachometer-alt benefit-icon"></i>
+                        <h4>Aumento da Produtividade</h4>
+                        <p>Automatize processos e ganhe tempo</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <div class="benefit-item">
+                        <i class="fas fa-lock benefit-icon"></i>
+                        <h4>Segurança</h4>
+                        <p>Dados protegidos e backups automáticos</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <div class="benefit-item">
+                        <i class="fas fa-mobile-alt benefit-icon"></i>
+                        <h4>Acesso Mobile</h4>
+                        <p>Sistema responsivo para todos dispositivos</p>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3">
+                    <div class="benefit-item">
+                        <i class="fas fa-chart-pie benefit-icon"></i>
+                        <h4>Gestão Eficiente</h4>
+                        <p>Tome decisões baseadas em dados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Formulário de Contato -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 text-center text-lg-start mb-4 mb-lg-0">
+                    <h2 class="mb-4">Entre em Contato</h2>
+                    <p class="lead mb-4">Tire suas dúvidas ou solicite uma demonstração. Retornaremos o mais breve possível!</p>
+                </div>
+                <div class="col-lg-6">
+                    <div class="cta-form">
+                        <form action="mailto:eduardojbarbalho@gmail.com" method="POST" enctype="text/plain">
+                            <div class="mb-3">
+                                <input type="text" class="form-control" name="nome" placeholder="Seu Nome" required>
+                            </div>
+                            <div class="mb-3">
+                                <input type="email" class="form-control" name="email" placeholder="Seu E-mail" required>
+                            </div>
+                            <div class="mb-3">
+                                <textarea class="form-control" name="mensagem" placeholder="Sua Mensagem" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-light btn-lg w-100">Enviar Mensagem</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center">
+        <div class="container">
+            <p>&copy; 2024 TaloApp - Sistema de Gestão de Pedidos</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Removido o link de preços do menu
+    </script>
+</body>
+</html> 

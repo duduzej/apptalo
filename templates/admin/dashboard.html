@@ -114,9 +114,31 @@
                                     <td>{{ pedido.cliente.nome }}</td>
                                     <td>{{ pedido.data_pedido.strftime('%d/%m/%Y') }}</td>
                                     <td>
-                                        <span class="badge bg-{{ pedido.status|lower|replace(' ', '-') }}">
-                                            {{ pedido.status }}
-                                        </span>
+                                        {% if pedido.status == 'Aguardando Pagamento' %}
+                                            <span class="badge bg-aguardando-pagamento">
+                                                {{ pedido.status }}
+                                            </span>
+                                        {% elif pedido.status == 'Aguardando Aprovação da Arte' %}
+                                            <span class="badge bg-aguardando-aprovacao-da-arte">
+                                                {{ pedido.status }}
+                                            </span>
+                                        {% elif pedido.status == 'Em Produção' %}
+                                            <span class="badge bg-em-producao">
+                                                {{ pedido.status }}
+                                            </span>
+                                        {% elif pedido.status == 'Entregue' %}
+                                            <span class="badge bg-entregue">
+                                                {{ pedido.status }}
+                                            </span>
+                                        {% elif pedido.status == 'Cancelado' %}
+                                            <span class="badge bg-cancelado">
+                                                {{ pedido.status }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                {{ pedido.status }}
+                                            </span>
+                                        {% endif %}
                                     </td>
                                     <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
                                 </tr>
@@ -153,6 +175,40 @@
         </div>
     </div>
 </div>
+
+<style>
+.bg-aguardando-pagamento {
+    background-color: #0d6efd !important;
+    color: #fff !important;
+}
+
+.bg-aguardando-aprovacao-da-arte {
+    background-color: #0dcaf0 !important;
+    color: #fff !important;
+}
+
+.bg-em-producao {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
+.bg-entregue {
+    background-color: #198754 !important;
+    color: #fff !important;
+}
+
+.bg-cancelado {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+}
+
+.badge {
+    padding: 0.5em 1em;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+</style>
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

@@ -50,20 +50,23 @@
                         <div id="itens-container">
                             <div class="item-row mb-3">
                                 <div class="row">
-                                    <div class="col-md-3">
-                                        <input type="text" class="form-control" name="itens[]" placeholder="Nome do Item" required>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <input type="text" class="form-control" name="itens[]" placeholder="Descrição">
+                                    <div class="col-md-2">
+                                        <input type="text" class="form-control" name="item[]" placeholder="Nome do Item" required>
                                     </div>
                                     <div class="col-md-2">
-                                        <input type="number" class="form-control quantidade" name="itens[]" placeholder="Quantidade" step="0.01" required>
+                                        <input type="text" class="form-control" name="material[]" placeholder="Material">
                                     </div>
                                     <div class="col-md-2">
-                                        <input type="number" class="form-control preco" name="itens[]" placeholder="Preço Unitário" step="0.01" required>
+                                        <input type="text" class="form-control" name="descricao[]" placeholder="Descrição">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" class="form-control quantidade" name="quantidade[]" placeholder="Quantidade" step="0.01" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" class="form-control preco" name="valor_unitario[]" placeholder="Preço Unitário" step="0.01" required>
                                     </div>
                                     <div class="col-md-1">
-                                        <input type="text" class="form-control total" name="itens[]" placeholder="Total" readonly>
+                                        <input type="text" class="form-control total" name="total[]" placeholder="Total" readonly>
                                     </div>
                                     <div class="col-md-1">
                                         <button type="button" class="btn btn-danger btn-block remover-item">
@@ -76,6 +79,9 @@
                         <button type="button" class="btn btn-success mt-3" id="adicionar-item">
                             <i class="fas fa-plus"></i> Adicionar Item
                         </button>
+                        <div class="text-right mt-3">
+                            <h4>Valor Total do Pedido: R$ <span id="valor-total-pedido">0.00</span></h4>
+                        </div>
                     </div>
                 </div>
 
@@ -93,12 +99,22 @@
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('itens-container');
     const addButton = document.getElementById('adicionar-item');
+    const valorTotalPedido = document.getElementById('valor-total-pedido');
 
     function calcularTotal(row) {
         const quantidade = parseFloat(row.querySelector('.quantidade').value) || 0;
         const preco = parseFloat(row.querySelector('.preco').value) || 0;
         const total = quantidade * preco;
         row.querySelector('.total').value = total.toFixed(2);
+        atualizarTotalPedido();
+    }
+
+    function atualizarTotalPedido() {
+        let total = 0;
+        document.querySelectorAll('.total').forEach(campo => {
+            total += parseFloat(campo.value) || 0;
+        });
+        valorTotalPedido.textContent = total.toFixed(2);
     }
 
     function adicionarItem() {
@@ -106,20 +122,23 @@ document.addEventListener('DOMContentLoaded', function() {
         row.className = 'item-row mb-3';
         row.innerHTML = `
             <div class="row">
-                <div class="col-md-3">
-                    <input type="text" class="form-control" name="itens[]" placeholder="Nome do Item" required>
-                </div>
-                <div class="col-md-3">
-                    <input type="text" class="form-control" name="itens[]" placeholder="Descrição">
+                <div class="col-md-2">
+                    <input type="text" class="form-control" name="item[]" placeholder="Nome do Item" required>
                 </div>
                 <div class="col-md-2">
-                    <input type="number" class="form-control quantidade" name="itens[]" placeholder="Quantidade" step="0.01" required>
+                    <input type="text" class="form-control" name="material[]" placeholder="Material">
                 </div>
                 <div class="col-md-2">
-                    <input type="number" class="form-control preco" name="itens[]" placeholder="Preço Unitário" step="0.01" required>
+                    <input type="text" class="form-control" name="descricao[]" placeholder="Descrição">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control quantidade" name="quantidade[]" placeholder="Quantidade" step="0.01" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control preco" name="valor_unitario[]" placeholder="Preço Unitário" step="0.01" required>
                 </div>
                 <div class="col-md-1">
-                    <input type="text" class="form-control total" name="itens[]" placeholder="Total" readonly>
+                    <input type="text" class="form-control total" name="total[]" placeholder="Total" readonly>
                 </div>
                 <div class="col-md-1">
                     <button type="button" class="btn btn-danger btn-block remover-item">
@@ -154,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
     container.addEventListener('click', function(e) {
         if (e.target.closest('.remover-item')) {
             e.target.closest('.item-row').remove();
+            atualizarTotalPedido();
         }
     });
 });

@@ -11,16 +11,16 @@
 
     <div class="row">
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card bg-primary text-white shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
                                 Pedidos Aguardando Pagamento</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pedidos_aguardando_pagamento }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-white">{{ pedidos_aguardando_pagamento }}</div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                            <i class="fas fa-clock fa-2x text-white-50"></i>
                         </div>
                     </div>
                 </div>
@@ -28,16 +28,16 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
+            <div class="card bg-info text-white shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
                                 Aguardando Aprovação da Arte</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pedidos_aguardando_arte }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-white">{{ pedidos_aguardando_arte }}</div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-palette fa-2x text-gray-300"></i>
+                            <i class="fas fa-palette fa-2x text-white-50"></i>
                         </div>
                     </div>
                 </div>
@@ -45,16 +45,16 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card bg-warning text-white shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
                                 Em Produção</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pedidos_em_producao }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-white">{{ pedidos_em_producao }}</div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-cogs fa-2x text-gray-300"></i>
+                            <i class="fas fa-cogs fa-2x text-white-50"></i>
                         </div>
                     </div>
                 </div>
@@ -62,16 +62,16 @@
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
+            <div class="card bg-success text-white shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            <div class="text-xs font-weight-bold text-white text-uppercase mb-1">
                                 Pedidos Entregues</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pedidos_entregues }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-white">{{ pedidos_entregues }}</div>
                         </div>
                         <div class="col-auto">
-                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                            <i class="fas fa-check-circle fa-2x text-white-50"></i>
                         </div>
                     </div>
                 </div>
@@ -109,9 +109,27 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="badge bg-{{ pedido.status|lower|replace(' ', '-') }}">
-                                    {{ pedido.status }}
-                                </span>
+                                {% if pedido.status == 'Aguardando Pagamento' %}
+                                    <span class="badge rounded-pill status-badge bg-aguardando-pagamento">
+                                        {{ pedido.status }}
+                                    </span>
+                                {% elif pedido.status == 'Aguardando Aprovação da Arte' %}
+                                    <span class="badge rounded-pill status-badge bg-aguardando-aprovacao-da-arte">
+                                        {{ pedido.status }}
+                                    </span>
+                                {% elif pedido.status == 'Em Produção' %}
+                                    <span class="badge rounded-pill status-badge bg-em-producao">
+                                        {{ pedido.status }}
+                                    </span>
+                                {% elif pedido.status == 'Entregue' %}
+                                    <span class="badge rounded-pill status-badge bg-entregue">
+                                        {{ pedido.status }}
+                                    </span>
+                                {% elif pedido.status == 'Cancelado' %}
+                                    <span class="badge rounded-pill status-badge bg-cancelado">
+                                        {{ pedido.status }}
+                                    </span>
+                                {% endif %}
                             </td>
                             <td>R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
                             <td>
@@ -137,29 +155,44 @@
 </div>
 
 <style>
+.status-badge {
+    padding: 0.5em 1em;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
 .bg-aguardando-pagamento {
-    background-color: #ffc107;
-    color: #000;
+    background-color: #0d6efd !important;
+    color: #fff !important;
 }
 
 .bg-aguardando-aprovacao-da-arte {
-    background-color: #17a2b8;
-    color: #fff;
+    background-color: #0dcaf0 !important;
+    color: #fff !important;
 }
 
 .bg-em-producao {
-    background-color: #0d6efd;
-    color: #fff;
+    background-color: #ffc107 !important;
+    color: #000 !important;
 }
 
 .bg-entregue {
-    background-color: #198754;
-    color: #fff;
+    background-color: #198754 !important;
+    color: #fff !important;
 }
 
 .bg-cancelado {
-    background-color: #dc3545;
-    color: #fff;
+    background-color: #dc3545 !important;
+    color: #fff !important;
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
 }
 </style>
 

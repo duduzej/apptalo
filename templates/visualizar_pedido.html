@@ -64,7 +64,7 @@
 
             <div class="row mt-4">
                 <div class="col-12">
-                    <a href="{{ url_for('exportar_pdf', id=pedido.id) }}" class="btn btn-success">Gerar PDF</a>
+                    <a href="{{ url_for('operacional_exportar_pdf', id=pedido.id) }}" class="btn btn-success" target="_blank">Gerar PDF</a>
                     <a href="{{ url_for('lista_pedidos') }}" class="btn btn-secondary">Voltar</a>
                 </div>
             </div>
