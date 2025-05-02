@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: talao-pedidos
+    env: python
+    buildCommand: poetry install
+    startCommand: gunicorn app:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MAIL_USERNAME
+        value: seu-email@gmail.com
+      - key: MAIL_PASSWORD
+        value: sua-senha-de-app
+      - key: STRIPE_API_KEY
+        value: sua-chave-secreta-stripe
+    healthCheckPath: /
+    autoDeploy: true 
